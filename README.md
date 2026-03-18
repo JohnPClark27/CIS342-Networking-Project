@@ -2,6 +2,8 @@
 
 Project: Local Simulation of UDP Protocol in Python
 
+Purpose: Build an understanding of UDP Datagrams and how they interact with each other.
+
 Initially, data will be "sent" between two devices to not have to worry about IP.
 
 Data for the UDP Datagram will be stored in a python struct with variables for: 
@@ -15,5 +17,8 @@ GUI - Using PySide6
 - The gui will be a split screen window.
 - One window will be for the server and another will be for the client
 - There will be some buttons to let you send messages from a port or listen to a port.
-- There will also be a place for your to see the data that has been sent.
+- There will also be a place for you to see the data that has been sent.
 
+Problems
+- What other protocols may need to be recreated to make UDP work
+- How should the IP address be incorporated
