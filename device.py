@@ -1,7 +1,5 @@
 import udp_datagram as udp
 import network_layer as ntwk
-import random
-import struct
 
 class Device():
     def __init__(self, port_number):
