@@ -53,7 +53,7 @@ def split_payload(payload):
         chunks.append(payload[i:i+PAYLOAD_CHUNK_SIZE])
     return chunks
 
-def calc_segment(payload_bytes):
+def calc_segment(src_port, dest_port, payload_bytes):
     '''
     segment format:
     [0–1]   src_port
@@ -62,7 +62,7 @@ def calc_segment(payload_bytes):
     [6–7]   checksum
     [8–...] payload/data divided into chunks of 65527 (65535 - 8 byte UDP header)
     '''
-    # payload_bytes = payload.encode("utf-8")
+
     payload_length = len(payload_bytes)
     header_bytes = pack_header(src_port, dest_port, payload_length)
     segment = header_bytes + payload_bytes
@@ -106,39 +106,33 @@ def verify_checksum(segment):
     else:
         return False
 
-def corrupt_segment(segment):
+def create_message(src_port, dest_port, payload):
     '''
-    Returns a corrupted version of the segment by flipping a random bit in the payload.
+    Creates a UDP message with the specified source port, destination port, and payload.
     '''
-    corrupted = bytearray(segment)
+    payload_bytes = read_image_as_bytes(payload)
+    if payload_bytes is None:
+        print("payload not loaded")
+        exit()
 
-    index = random.randint(8, len(segment) - 1) # avoid header
-    corrupted[index] ^= 0xFF
+    segments = []
+    chunks = split_payload(payload_bytes)
+    for chunk in chunks:
+        segments.append(calc_segment(src_port, dest_port, chunk))
 
-    return bytes(corrupted)
+    return segments
 
-src_port = 80
-dest_port = 80
-payload = "udp_segment_structure.png"
-payload_bytes = read_image_as_bytes(payload)
-if payload_bytes is None:
-    print("payload not loaded")
-    exit()
+def reassemble_message(segments, output_file_name = "reassembled.png"):
+    '''
+    Given a list of segments, verifies the checksum of each segment and reassembles the payload if the segment is valid.
+    Writes the reassembled payload to an image file.
+    '''
+    reassembled = bytearray()
 
-segments = []
-chunks = split_payload(payload_bytes)
-for chunk in chunks:
-    segments.append(calc_segment(chunk))
-
-# segments[0] = corrupt_segment(segments[0]) # corrupt a segment
-
-reassembled = bytearray()
-
-for segment in segments:
-    if verify_checksum(segment):
-        reassembled.extend(extract_payload(segment))
-    else:
-        print("Invalid segment detected")
+    for segment in segments:
+        if verify_checksum(segment):
+            reassembled.extend(extract_payload(segment))
+        else:
+            print("Invalid segment detected")
         
-out_payload_name = payload.replace('.png', '_reassembled.png')
-write_bytes_to_image(reassembled, out_payload_name)
+    write_bytes_to_image(reassembled, output_file_name)
