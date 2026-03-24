@@ -1,5 +1,3 @@
-import udp_datagram as udp
-import network_layer as ntwk
 import device
 
 src_port = int(input(f"Enter source port number: "))
