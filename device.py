@@ -1,5 +1,6 @@
 import udp_datagram as udp
 import network_layer as ntwk
+import time
 
 class Device():
     '''
@@ -16,6 +17,7 @@ class Device():
         '''
         udp_datagram = udp.create_message(self.port_number, dest_port, payload)
         print(f"{self.name} is sending a message...")
+        time.sleep(3) # simulate some delay
         return (ntwk.send(udp_datagram, corrupt_chance))
 
     def receive_message(self, message, output_file_name):
@@ -24,6 +26,7 @@ class Device():
         The reassembled payload is saved to the specified output file name.
         '''
         print(f"{self.name} is receiving a message...")
+        time.sleep(3) # simulate some delay
         udp_datagram = ntwk.recv(message)
         if (udp.reassemble_message(udp_datagram, output_file_name)):
             print(f"{self.name} received the message: {output_file_name}.")

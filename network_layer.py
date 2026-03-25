@@ -1,7 +1,7 @@
 """
 This module is a pseudo-network layer. It provides functionality to send messages over the network, with a chance of corruption during transmission.
 """
-import random
+import random, time
 
 def corrupt_segment(segment):
     '''
@@ -18,12 +18,16 @@ def send(message, corrupt_chance = 0):
     '''
     Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
     '''
+    print(f"NTWK: Transmitting message...")
+
+    time.sleep(3) # simulate some delay
+
     if random.random() < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
         message[0] = corrupt_segment(message[0]) # corrupt a segment
         return message
     else:
-        print("NTWK: Message sent successfully.")
+        print("NTWK: Message transmitted successfully.")
         return message
     
 def recv(message):
