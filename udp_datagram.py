@@ -1,9 +1,12 @@
-import random
+"""
+This module implements a simulation of UDP.
+"""
 import struct
 
 HEADER_FORMAT = '!HHHH'
 PAYLOAD_CHUNK_SIZE = 65527
 
+# === Helper functions for image payloads ===
 def read_image_as_bytes(file_path):
     '''
     Given an image file path, returns a string of bytes representing the image.
@@ -13,7 +16,7 @@ def read_image_as_bytes(file_path):
             image_bytes = f.read()
         return image_bytes
     except FileNotFoundError:
-        print(f"Error: File not found at {file_path}")
+        print(f"UDP: Error: File not found at {file_path}")
         return None
     
 def write_bytes_to_image(payload_bytes, output_path):
@@ -23,6 +26,7 @@ def write_bytes_to_image(payload_bytes, output_path):
     with open(output_path, "wb") as f:
         f.write(payload_bytes)
 
+# === Extracts parts from segments ===
 def extract_payload(segment):
     '''
     Returns payload bytes from segment
@@ -35,15 +39,6 @@ def extract_header(segment):
     '''
     return segment[:8]
 
-def pack_header(src_port, dest_port, payload_length, checksum = 0):
-    '''
-    Packs a UDP-style header containing source port, destination port,
-    segment length (header + payload), and checksum into 8 bytes.
-    '''
-    length = 8 + payload_length
-    result = struct.pack(HEADER_FORMAT, src_port, dest_port, length, checksum)
-    return result
-
 def split_payload(payload):
     '''
     Splits the payload into chunks of size PAYLOAD_CHUNK_SIZE (65527 bytes).
@@ -53,8 +48,22 @@ def split_payload(payload):
         chunks.append(payload[i:i+PAYLOAD_CHUNK_SIZE])
     return chunks
 
+# === Main UDP functions ===
+
+def pack_header(src_port, dest_port, payload_length, checksum = 0):
+    '''
+    Packs a UDP-style header containing source port, destination port,
+    segment length (header + payload), and checksum into 8 bytes.
+    '''
+    length = 8 + payload_length
+    result = struct.pack(HEADER_FORMAT, src_port, dest_port, length, checksum)
+    return result
+
 def calc_segment(src_port, dest_port, payload_bytes):
     '''
+    Given source port, destination port, and payload bytes, calculates the checksum and returns a complete UDP segment as bytes.
+    The UDP
+
     segment format:
     [0–1]   src_port
     [2–3]   dest_port
@@ -94,11 +103,12 @@ def verify_checksum(segment):
     if len(segment) % 2 == 1:
         segment = segment + b'\x00' # add a padding 0 bit if length of segment is odd
 
+    # Calculate the checksum of the segment. If the result is 0xFFFF, the segment is valid.
     total = 0
     for i in range(0, len(segment), 2):
-        word = int.from_bytes(segment[i:i+2], byteorder="big", signed=False)
+        word = int.from_bytes(segment[i:i+2], byteorder="big", signed=False) # network byte order is big-endian, checksum is unsigned
         total += word
-        if (total > 0xFFFF):
+        if (total > 0xFFFF): # handle overflow by adding carry back to total
             total = (total & 0xFFFF) + (total >> 16)
 
     if total == 0xFFFF:
@@ -109,10 +119,13 @@ def verify_checksum(segment):
 def create_message(src_port, dest_port, payload):
     '''
     Creates a UDP message with the specified source port, destination port, and payload.
+    The payload is read from an image file and split into chunks if necessary.
+    Each chunk is packed into a segment with a header containing the source port, destination port, length, and checksum.
+    Returns a list of segments representing the complete message.
     '''
     payload_bytes = read_image_as_bytes(payload)
     if payload_bytes is None:
-        print("payload not loaded")
+        print("UDP: payload not loaded.")
         exit()
 
     segments = []
@@ -126,13 +139,23 @@ def reassemble_message(segments, output_file_name = "reassembled.png"):
     '''
     Given a list of segments, verifies the checksum of each segment and reassembles the payload if the segment is valid.
     Writes the reassembled payload to an image file.
+    Returns true if not corrupted, false otherwise
     '''
-    reassembled = bytearray()
+    reassembled = bytearray() # using bytearray for efficient concatenation of bytes
+
+    was_corrupted = False
 
     for segment in segments:
         if verify_checksum(segment):
             reassembled.extend(extract_payload(segment))
         else:
-            print("Invalid segment detected")
-        
-    write_bytes_to_image(reassembled, output_file_name)
+            was_corrupted = True
+            break
+
+    if was_corrupted:
+        print("UDP: Invalid segment detected.")
+        return False
+    else:
+        print("UDP: Message successfully reassembled...")
+        write_bytes_to_image(reassembled, output_file_name)
+        return True
