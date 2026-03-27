@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, Q
                                QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, 
                                QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QIcon
 
 class GlassTheme:
     @staticmethod
@@ -35,6 +35,8 @@ class GlassTheme:
                 QSpinBox::down-button {{ subcontrol-position: bottom right; border-bottom-right-radius: 3px; border-top: 1px solid #555; }}
                 QSpinBox::up-arrow {{ image: url("{base_dir}/white-up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 QSpinBox::down-arrow {{ image: url("{base_dir}/white-down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                #ThemeBtn {{ background-color: #f5f5f7; border: 1px solid #d1d1d6; border-radius: 4px; }}
+                #ThemeBtn:hover {{ background-color: #e5e5ea; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
             """
         else:
@@ -60,6 +62,8 @@ class GlassTheme:
                 QSpinBox::down-button {{ subcontrol-position: bottom right; border-bottom-right-radius: 3px; border-top: 1px solid #b0b0b0; }}
                 QSpinBox::up-arrow {{ image: url("{base_dir}/up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 QSpinBox::down-arrow {{ image: url("{base_dir}/down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                #ThemeBtn {{ background-color: #333333; border: 1px solid #555555; border-radius: 4px; }}
+                #ThemeBtn:hover {{ background-color: #444446; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
             """
 
@@ -93,8 +97,11 @@ class UIBuilder:
         expanding_spacer = QWidget()
         expanding_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toolbar.addWidget(expanding_spacer)
-        self.theme_btn = QPushButton("Dark Mode")
-        self.theme_btn.setFixedHeight(30)
+        
+        # --- Updated Theme Button ---
+        self.theme_btn = QPushButton()
+        self.theme_btn.setObjectName("ThemeBtn")
+        self.theme_btn.setFixedSize(36, 30)
         self.toolbar.addWidget(self.theme_btn)
 
     def build_central_area(self):
@@ -197,7 +204,15 @@ class MainWindow(QMainWindow):
 
     def apply_theme(self):
         self.setStyleSheet(GlassTheme.get_style(self.is_dark_mode))
-        self.ui.theme_btn.setText("Light Mode" if self.is_dark_mode else "Dark Mode")
+        
+        # --- Updated Apply Theme Logic ---
+        base_dir = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
+        if self.is_dark_mode:
+            icon_path = f"{base_dir}/sun-svgrepo-com.svg"
+        else:
+            icon_path = f"{base_dir}/moon-svgrepo-com.svg"
+            
+        self.ui.theme_btn.setIcon(QIcon(icon_path))
 
     def reset_logs(self):
         for log in (self.ui.log_left, self.ui.log_right):
