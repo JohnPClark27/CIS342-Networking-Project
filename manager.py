@@ -3,7 +3,7 @@ import device
 from PySide6.QtWidgets import QApplication
 from gui import MainWindow
 from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
-
+import ipaddress as ipa
 
 class Manager:
     def __init__(self):
@@ -38,9 +38,19 @@ class Manager:
         self.corruption_chance = value
         self.window.update_corruption_label(value)
 
-    
+
 
     def on_send(self):
+        output_file_name = "received_image.png"
+
+        # Delete output file if it already exists so it doesn't interfere with the next transmission
+        if os.path.exists(output_file_name):
+            os.remove(output_file_name)
+            print(f"SYS: File '{output_file_name}' has been deleted.")
+        else:
+            print(f"SYS: File '{output_file_name}' does not exist.")
+
+        # Ensure input file exists
         if self.selected_source_image is None:
             self.window.write_log("~ ERROR: No file selected.", "left", "error")
             return
@@ -48,22 +58,27 @@ class Manager:
         portNumberA = int(self.window.ui.sender_port_input.text().strip())
         portNumberB = int(self.window.ui.receiver_port_input.text().strip())
 
-        deviceA = device.Device(port_number=portNumberA, name="Device_A")
-        deviceB = device.Device(port_number=portNumberB, name="Device_B")
+        ipAddressA = ipa.IPv4Address(self.window.ui.ip_input.text().strip())
+        ipAddressB = ipa.IPv4Address(self.window.ui.rec_ip_input.text().strip())
+
+        # Create devices
+        deviceA = device.Device(port_number=portNumberA, ip_address=ipAddressA, name="Device_A")
+        deviceB = device.Device(port_number=portNumberB, ip_address=ipAddressB, name="Device_B")
 
         # Simulate sending the message from Device A to Device B
-        self.window.write_log(f"~ Preparing Packet...", "left", "info")
+        self.window.write_log(f"~ Preparing packet...", "left", "info")
         message = deviceA.send_message(dest_port=portNumberB, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
+
         self.window.write_log(f"~ Payload dispatched.", "left", "success")
-        deviceB.receive_message(message, output_file_name="received_image.png")
-        self.window.write_log(f"~ Packet Recieved.", "right", "success")
-        if os.path.exists("received_image.png"):
+        deviceB.receive_message(message, output_file_name=output_file_name)
+
+        self.window.write_log(f"~ Packet received.", "right", "success")
+        if os.path.exists(output_file_name):
             self.window.write_log(f"~ Payload read successfully.", "right", "success")
-            self.window.set_received_image("received_image.png")
+            self.window.set_received_image(output_file_name)
         else:
-            self.window.write_log(f"~ Payload read failed.", "right", "error")
+            self.window.write_log(f"~ Payload read failed, may have been corrupted.", "right", "error")
             self.window.set_received_image(None)
-        
         
 
 

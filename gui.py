@@ -25,15 +25,15 @@ class GlassTheme:
                 QComboBox {{ padding-right: 24px; }}
                 QComboBox::drop-down {{ subcontrol-origin: padding; subcontrol-position: top right; width: 24px; border-left: 1px solid #555; background: #333; border-top-right-radius: 3px; border-bottom-right-radius: 3px; }}
                 QComboBox::drop-down:hover {{ background-color: #007aff; }}
-                QComboBox::down-arrow {{ image: url("{base_dir}/white-down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
+                QComboBox::down-arrow {{ image: url("{base_dir}/gui_components/white-down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
                 QComboBox QAbstractItemView {{ background-color: #2b2b2b; color: white; selection-background-color: #007aff; selection-color: white; border: 1px solid #555; outline: none; }}
                 QSpinBox {{ padding-right: 24px; }}
                 QSpinBox::up-button, QSpinBox::down-button {{ subcontrol-origin: border; width: 22px; background: #333; border-left: 1px solid #555; }}
                 QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ background-color: #007aff; }}
                 QSpinBox::up-button {{ subcontrol-position: top right; border-top-right-radius: 3px; }}
                 QSpinBox::down-button {{ subcontrol-position: bottom right; border-bottom-right-radius: 3px; border-top: 1px solid #555; }}
-                QSpinBox::up-arrow {{ image: url("{base_dir}/white-up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
-                QSpinBox::down-arrow {{ image: url("{base_dir}/white-down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                QSpinBox::up-arrow {{ image: url("{base_dir}/gui_components/white-up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                QSpinBox::down-arrow {{ image: url("{base_dir}/gui_components/white-down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 #ThemeBtn {{ background-color: #f5f5f7; border: 1px solid #d1d1d6; border-radius: 4px; }}
                 #ThemeBtn:hover {{ background-color: #e5e5ea; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
@@ -52,15 +52,15 @@ class GlassTheme:
                 QComboBox {{ padding-right: 24px; }}
                 QComboBox::drop-down {{ subcontrol-origin: padding; subcontrol-position: top right; width: 24px; border-left: 1px solid #b0b0b0; background: #f0f0f0; border-top-right-radius: 3px; border-bottom-right-radius: 3px; }}
                 QComboBox::drop-down:hover {{ background-color: #007aff; }}
-                QComboBox::down-arrow {{ image: url("{base_dir}/down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
+                QComboBox::down-arrow {{ image: url("{base_dir}/gui_components/down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
                 QComboBox QAbstractItemView {{ background-color: white; color: black; selection-background-color: #007aff; selection-color: white; border: 1px solid #b0b0b0; outline: none; }}
                 QSpinBox {{ padding-right: 24px; }}
                 QSpinBox::up-button, QSpinBox::down-button {{ subcontrol-origin: border; width: 22px; background: #f0f0f0; border-left: 1px solid #b0b0b0; }}
                 QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ background-color: #007aff; }}
                 QSpinBox::up-button {{ subcontrol-position: top right; border-top-right-radius: 3px; }}
                 QSpinBox::down-button {{ subcontrol-position: bottom right; border-bottom-right-radius: 3px; border-top: 1px solid #b0b0b0; }}
-                QSpinBox::up-arrow {{ image: url("{base_dir}/up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
-                QSpinBox::down-arrow {{ image: url("{base_dir}/down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                QSpinBox::up-arrow {{ image: url("{base_dir}/gui_components/up-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
+                QSpinBox::down-arrow {{ image: url("{base_dir}/gui_components/down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 #ThemeBtn {{ background-color: #333333; border: 1px solid #555555; border-radius: 4px; }}
                 #ThemeBtn:hover {{ background-color: #444446; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
@@ -210,9 +210,9 @@ class MainWindow(QMainWindow):
         
         base_dir = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
         if self.is_dark_mode:
-            icon_path = f"{base_dir}/sun-svgrepo-com.svg"
+            icon_path = f"{base_dir}/gui_components/sun-svgrepo-com.svg"
         else:
-            icon_path = f"{base_dir}/moon-svgrepo-com.svg"
+            icon_path = f"{base_dir}/gui_components/moon-svgrepo-com.svg"
             
         self.ui.theme_btn.setIcon(QIcon(icon_path))
 

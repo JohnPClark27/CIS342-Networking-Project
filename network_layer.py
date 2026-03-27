@@ -14,13 +14,13 @@ def corrupt_segment(segment):
 
     return bytes(corrupted)
 
-def send(message, corrupt_chance = 0):
+def send(message, corrupt_chance = 0, delay = 0):
     '''
     Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
     '''
     print(f"NTWK: Transmitting message...")
 
-    time.sleep(3) # simulate some delay
+    time.sleep(delay) # simulate some delay
 
     if random.randint(0, 100) < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
