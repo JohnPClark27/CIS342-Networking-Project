@@ -2,6 +2,7 @@ import sys, os, ipaddress
 from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, QWidget, QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
 from PySide6.QtCore import (Qt, QRegularExpression)
 from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
+import device
 
 class GlassTheme:
     @staticmethod
@@ -64,6 +65,7 @@ class GlassTheme:
                 #ThemeBtn:hover {{ background-color: #444446; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
             """
+
 class IPLineEdit(QLineEdit):
     def __init__(self, default_text=""):
         super().__init__(default_text)
@@ -73,6 +75,7 @@ class IPLineEdit(QLineEdit):
     def mousePressEvent(self, event):
         self.clear()
         super().mousePressEvent(event)
+
 class UIBuilder:
     def __init__(self, main_window):
         self.mw = main_window
@@ -194,12 +197,9 @@ class MainWindow(QMainWindow):
         self.apply_theme() 
         self.toggle_ip_fields(self.ui.protocol_combo.currentText())
 
+
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
-        self.ui.protocol_combo.currentTextChanged.connect(self.toggle_ip_fields)
-        self.ui.corruption_slider.valueChanged.connect(self.update_corruption_label)
-        self.ui.select_file_btn.clicked.connect(self.open_file)
-        self.ui.send_file_btn.clicked.connect(self.simulate_send)
 
     def toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
@@ -221,16 +221,9 @@ class MainWindow(QMainWindow):
             log.setText("<span style='color: white; font-weight: bold;'>Logs:</span>")
             log.setMinimumHeight(120)
 
-    def append_log(self, widget, text, color="white"):
-        widget.append(f"<span style='color: {color};'>{text}</span>")
-        QApplication.processEvents()
-        doc_height = int(widget.document().size().height()) + 25
-        if doc_height > widget.minimumHeight():
-            widget.setMinimumHeight(doc_height)
-
     def toggle_ip_fields(self, protocol_name):
         self.reset_logs()
-        self.append_log(self.ui.log_left, f"~ Protocol switched to {protocol_name}", "#38bdf8")
+        self.write_log(f"~ Protocol switched to {protocol_name}", "left", "info")
         show_ip = protocol_name in ("UDP", "TCP", "RUDP")
         for w in self.ui.ip_widgets:
             w.setVisible(show_ip)
@@ -247,32 +240,43 @@ class MainWindow(QMainWindow):
                 Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
             )
             self.ui.pic_left.setPixmap(pixmap)
-            self.reset_logs()
-            self.append_log(self.ui.log_left, f"~ Image loaded: {os.path.basename(file_path)}", "#4ade80")
+            return file_path
+        self.ui.pic_left.clear()
+        return None
+
+    def set_received_image(self, image_path):
+        if image_path:
+            pixmap = QPixmap(image_path).scaled(
+                self.ui.pic_right.width(), self.ui.pic_right.height(), 
+                Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+            )
+            self.ui.pic_right.setPixmap(pixmap)
+        else:
+            self.ui.pic_right.clear()
+
 
     def simulate_send(self):
-        self.reset_logs()
         protocol = self.ui.protocol_combo.currentText()
         if not self.selected_file_path:
-            self.append_log(self.ui.log_left, "~ ERROR: Please select an image first.", "#f87171")
+            self.write_log("~ ERROR: No file selected.", "left", "error")
             return
 
-        if protocol in ("UDP", "TCP", "RUDP"):
-            ip_text = self.ui.ip_input.text().strip()
-            try:
-                valid_ip = ipaddress.IPv4Address(ip_text)
-                self.append_log(self.ui.log_left, f"~ IPv4 Validated: {valid_ip}", "#4ade80")
-            except ValueError:
-                self.append_log(self.ui.log_left, f"~ ERROR: '{ip_text}' is not a valid IPv4 Address.", "#f87171")
-                return
+        if protocol == "UDP":
+            pass
+            
 
-        self.append_log(self.ui.log_left, f"~ Starting {protocol} transmission to Port {self.ui.sender_port_input.value()}...", "#fbbf24")
-        for i in range(1, 8):
-            self.append_log(self.ui.log_left, f"~ Constructing packet sequence [{i}/7]...", "#94a3b8")
+    def write_log(self, text, side, status):
+        match status:
+            case "success":
+                color = "#4ade80"
+            case "error":
+                color = "#f87171"
+            case "info":
+                color = "#38bdf8"
+            case _:
+                color = "white"
+        
+        widget = self.ui.log_left if side == "left" else self.ui.log_right
+        widget.append(f"<span style='color: {color};'>{text}</span>")
+        QApplication.processEvents()
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion") 
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())

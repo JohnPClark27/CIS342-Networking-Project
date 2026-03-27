@@ -22,7 +22,7 @@ def send(message, corrupt_chance = 0):
 
     time.sleep(3) # simulate some delay
 
-    if random.random() < corrupt_chance:
+    if random.randint(0, 100) < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
         message[0] = corrupt_segment(message[0]) # corrupt a segment
         return message

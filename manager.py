@@ -1,0 +1,73 @@
+import sys, os, ipaddress
+import device
+from PySide6.QtWidgets import QApplication
+from gui import MainWindow
+from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
+
+
+class Manager:
+    def __init__(self):
+        self.app = QApplication(sys.argv)
+        self.app.setStyle("Fusion")
+        self.window = MainWindow()
+        
+        self.selected_source_image = None
+        self.corruption_chance = 0
+        self.protocol = "UDP"
+
+        self.connect_signals()
+
+    def connect_signals(self):
+        self.window.ui.send_file_btn.clicked.connect(self.on_send)
+        self.window.ui.protocol_combo.currentTextChanged.connect(self.change_protocol)
+        self.window.ui.select_file_btn.clicked.connect(self.select_file)
+        self.window.ui.corruption_slider.valueChanged.connect(self.set_corruption_chance)
+
+    def change_protocol(self, protocol_name):
+        self.protocol = protocol_name
+        self.window.write_log(f"~ Protocol switched to {protocol_name}", "left", "info")
+
+    def select_file(self):
+        self.selected_source_image = self.window.open_file()
+        if self.selected_source_image:
+            self.window.write_log(f"~ Image loaded: {self.selected_source_image}", "left", "success")
+        else:
+            self.window.write_log(f"~ Error: No file selected.", "left", "error")
+
+    def set_corruption_chance(self, value):
+        self.corruption_chance = value
+        self.window.update_corruption_label(value)
+
+    
+
+    def on_send(self):
+        if self.selected_source_image is None:
+            self.window.write_log("~ ERROR: No file selected.", "left", "error")
+            return
+
+        portNumberA = int(self.window.ui.sender_port_input.text().strip())
+        portNumberB = int(self.window.ui.receiver_port_input.text().strip())
+
+        deviceA = device.Device(port_number=portNumberA, name="Device_A")
+        deviceB = device.Device(port_number=portNumberB, name="Device_B")
+
+        # Simulate sending the message from Device A to Device B
+        self.window.write_log(f"~ Preparing Packet...", "left", "info")
+        message = deviceA.send_message(dest_port=portNumberB, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
+        self.window.write_log(f"~ Payload dispatched.", "left", "success")
+        deviceB.receive_message(message, output_file_name="received_image.png")
+        self.window.write_log(f"~ Packet Recieved.", "right", "success")
+        if os.path.exists("received_image.png"):
+            self.window.write_log(f"~ Payload read successfully.", "right", "success")
+            self.window.set_received_image("received_image.png")
+        else:
+            self.window.write_log(f"~ Payload read failed.", "right", "error")
+            self.window.set_received_image(None)
+        
+        
+
+
+if __name__ == "__main__":
+    manager = Manager()
+    manager.window.show()
+    sys.exit(manager.app.exec())

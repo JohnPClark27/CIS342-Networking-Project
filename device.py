@@ -1,6 +1,7 @@
 import udp_datagram as udp
 import network_layer as ntwk
 import time
+import ipaddress
 
 class Device():
     '''
@@ -8,7 +9,9 @@ class Device():
     '''
     def __init__(self, port_number, name = "Unnamed_Device"):
         self.port_number = port_number
+        self.ip_address = ipaddress.IPv4Address("127.0.0.1")
         self.name = name
+
 
     def send_message(self, dest_port, payload, corrupt_chance = 0):
         '''
