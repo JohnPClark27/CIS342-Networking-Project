@@ -1,9 +1,7 @@
 import sys, os, ipaddress
-from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, QWidget,
-                               QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, 
-                               QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, QWidget, QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
+from PySide6.QtCore import (Qt, QRegularExpression)
+from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
 
 class GlassTheme:
     @staticmethod
@@ -66,7 +64,15 @@ class GlassTheme:
                 #ThemeBtn:hover {{ background-color: #444446; border: 1px solid #007aff; }}
                 {slider_css} {log_css}
             """
+class IPLineEdit(QLineEdit):
+    def __init__(self, default_text=""):
+        super().__init__(default_text)
+        regex = QRegularExpression(r"[0-9\.]+")
+        self.setValidator(QRegularExpressionValidator(regex, self))
 
+    def mousePressEvent(self, event):
+        self.clear()
+        super().mousePressEvent(event)
 class UIBuilder:
     def __init__(self, main_window):
         self.mw = main_window
@@ -97,8 +103,6 @@ class UIBuilder:
         expanding_spacer = QWidget()
         expanding_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toolbar.addWidget(expanding_spacer)
-        
-        # --- Updated Theme Button ---
         self.theme_btn = QPushButton()
         self.theme_btn.setObjectName("ThemeBtn")
         self.theme_btn.setFixedSize(36, 30)
@@ -118,12 +122,11 @@ class UIBuilder:
         self.pic_right.setObjectName("PicArea")
         self.pic_right.setMinimumHeight(280)
         self.pic_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
         left_port_container = QWidget()
         left_port_layout = QHBoxLayout(left_port_container)
         left_port_layout.addStretch() 
-        self.ip_label = QLabel("IP Address:")
-        self.ip_input = QLineEdit("127.0.0.1")
+        self.ip_label = QLabel("IPv4 Address:")
+        self.ip_input = IPLineEdit("127.0.0.1")
         self.ip_input.setFixedWidth(120)
         self.port_spacer = QLabel("  ")
         self.sender_port_input = QSpinBox()
@@ -138,8 +141,8 @@ class UIBuilder:
         right_port_container = QWidget()
         right_port_layout = QHBoxLayout(right_port_container)
         right_port_layout.addStretch()
-        self.rec_ip_label = QLabel("IP Address:")
-        self.rec_ip_input = QLineEdit("127.0.0.1")
+        self.rec_ip_label = QLabel("IPv4 Address:")
+        self.rec_ip_input = IPLineEdit("127.0.0.1")
         self.rec_ip_input.setFixedWidth(120)
         self.rec_port_spacer = QLabel("  ")
         self.receiver_port_input = QSpinBox()
@@ -205,7 +208,6 @@ class MainWindow(QMainWindow):
     def apply_theme(self):
         self.setStyleSheet(GlassTheme.get_style(self.is_dark_mode))
         
-        # --- Updated Apply Theme Logic ---
         base_dir = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
         if self.is_dark_mode:
             icon_path = f"{base_dir}/sun-svgrepo-com.svg"
@@ -258,11 +260,11 @@ class MainWindow(QMainWindow):
         if protocol in ("UDP", "TCP", "RUDP"):
             ip_text = self.ui.ip_input.text().strip()
             try:
-                valid_ip = ipaddress.ip_address(ip_text)
-                self.append_log(self.ui.log_left, f"~ IP Validated: {valid_ip}", "#4ade80")
+                valid_ip = ipaddress.IPv4Address(ip_text)
+                self.append_log(self.ui.log_left, f"~ IPv4 Validated: {valid_ip}", "#4ade80")
             except ValueError:
-                self.append_log(self.ui.log_left, f"~ ERROR: '{ip_text}' is not a valid IP Address.", "#f87171")
-                return 
+                self.append_log(self.ui.log_left, f"~ ERROR: '{ip_text}' is not a valid IPv4 Address.", "#f87171")
+                return
 
         self.append_log(self.ui.log_left, f"~ Starting {protocol} transmission to Port {self.ui.sender_port_input.value()}...", "#fbbf24")
         for i in range(1, 8):
