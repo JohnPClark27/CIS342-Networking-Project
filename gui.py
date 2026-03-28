@@ -87,7 +87,7 @@ class UIBuilder:
         self.toolbar.setMovable(False)
         self.mw.addToolBar(self.toolbar)
         self.protocol_combo = QComboBox()
-        self.protocol_combo.addItems(["UDP", "TCP", "RUDP"])
+        self.protocol_combo.addItems(["UDP", "RUDP", "TCP"])
         self.protocol_combo.setMinimumWidth(80)
         self.toolbar.addWidget(QLabel(" Transport Protocol: "))
         self.toolbar.addWidget(self.protocol_combo)
