@@ -127,7 +127,6 @@ class UIBuilder:
         self.pic_right.setMinimumHeight(280)
         self.pic_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # --- LEFT PORT CONTAINER ---
         left_port_container = QWidget()
         left_port_layout = QHBoxLayout(left_port_container)
         left_port_layout.addStretch() 
@@ -154,24 +153,19 @@ class UIBuilder:
         self.dest_port_input.setValue(123)
         self.dest_port_input.setFixedWidth(90)
 
-        # Initialize buttons here so we can add them to the grid
         self.select_file_btn = QPushButton("Select File")
         self.send_file_btn = QPushButton("Send File")
         
-        # Create a mini-layout to keep the buttons neatly side-by-side
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, 0, 0, 0)
         button_layout.addWidget(self.select_file_btn)
         button_layout.addWidget(self.send_file_btn)
 
-        # Add to Grid - Row 0: IPv4 fields and Sender Port fields
         ports_grid.addWidget(self.ip_label, 0, 0)
         ports_grid.addWidget(self.ip_input, 0, 1)
         ports_grid.addWidget(self.port_spacer, 0, 2)
         ports_grid.addWidget(self.sender_port_label, 0, 3)
         ports_grid.addWidget(self.sender_port_input, 0, 4)
-
-        # Add to Grid - Row 1: Buttons (spanning cols 0 & 1) and Destination Port (cols 3 & 4)
         ports_grid.addLayout(button_layout, 1, 0, 1, 2) 
         ports_grid.addWidget(self.dest_port_label, 1, 3)
         ports_grid.addWidget(self.dest_port_input, 1, 4)
@@ -179,28 +173,39 @@ class UIBuilder:
         left_port_layout.addWidget(left_grid_widget)
         left_port_layout.addStretch() 
 
-        # --- RIGHT PORT CONTAINER ---
         right_port_container = QWidget()
         right_port_layout = QHBoxLayout(right_port_container)
         right_port_layout.addStretch()
         
+        right_grid_widget = QWidget()
+        right_ports_grid = QGridLayout(right_grid_widget)
+        right_ports_grid.setContentsMargins(0, 0, 0, 0)
+        right_ports_grid.setSpacing(8)
+
         self.rec_ip_label = QLabel("IPv4 Address:")
         self.rec_ip_input = IPLineEdit("127.0.0.5")
         self.rec_ip_input.setFixedWidth(120)
         self.rec_port_spacer = QLabel("  ")
+        self.rec_port_label = QLabel("Port Number:")
         self.receiver_port_input = QSpinBox()
         self.receiver_port_input.setRange(1, 65535)
         self.receiver_port_input.setValue(123)
         self.receiver_port_input.setFixedWidth(90)
         
-        for w in [self.rec_ip_label, self.rec_ip_input, self.rec_port_spacer, QLabel("Port Number:"), self.receiver_port_input]:
-            right_port_layout.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
-            
+        self.clear_logs_btn = QPushButton("Clear Logs")
+        
+        right_ports_grid.addWidget(self.rec_ip_label, 0, 0)
+        right_ports_grid.addWidget(self.rec_ip_input, 0, 1)
+        right_ports_grid.addWidget(self.rec_port_spacer, 0, 2)
+        right_ports_grid.addWidget(self.rec_port_label, 0, 3)
+        right_ports_grid.addWidget(self.receiver_port_input, 0, 4)
+        right_ports_grid.addWidget(self.clear_logs_btn, 1, 0, 1, 2)
+
+        right_port_layout.addWidget(right_grid_widget, alignment=Qt.AlignmentFlag.AlignTop)
         right_port_layout.addStretch()
 
         self.ip_widgets = [self.ip_label, self.ip_input, self.port_spacer, self.rec_ip_label, self.rec_ip_input, self.rec_port_spacer]
 
-        # --- LOGS ---
         self.log_left = QTextEdit()
         self.log_left.setReadOnly(True)
         self.log_left.setMinimumHeight(120)
@@ -210,13 +215,10 @@ class UIBuilder:
         self.log_right.setMinimumHeight(120)
         self.log_right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
 
-        # --- MAIN GRID ASSEMBLY ---
         self.grid.addWidget(self.pic_left, 0, 0)
         self.grid.addWidget(self.pic_right, 0, 1)
         self.grid.addWidget(left_port_container, 1, 0)
         self.grid.addWidget(right_port_container, 1, 1)
-        
-        # Shifted the logs up to row 2 since the dedicated button container in row 2 was removed
         self.grid.addWidget(self.log_left, 2, 0)
         self.grid.addWidget(self.log_right, 2, 1)
 
@@ -234,6 +236,7 @@ class MainWindow(QMainWindow):
 
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
+        self.ui.clear_logs_btn.clicked.connect(self.reset_logs)
 
     def toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
