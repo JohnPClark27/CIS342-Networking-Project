@@ -117,6 +117,7 @@ class UIBuilder:
         self.grid = QGridLayout(central_widget)
         self.grid.setSpacing(15)
         self.grid.setContentsMargins(20, 20, 20, 20)
+        
         self.pic_left = QLabel()
         self.pic_left.setObjectName("PicArea")
         self.pic_left.setMinimumHeight(280)
@@ -125,25 +126,49 @@ class UIBuilder:
         self.pic_right.setObjectName("PicArea")
         self.pic_right.setMinimumHeight(280)
         self.pic_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         left_port_container = QWidget()
         left_port_layout = QHBoxLayout(left_port_container)
         left_port_layout.addStretch() 
+
+        left_grid_widget = QWidget()
+        ports_grid = QGridLayout(left_grid_widget)
+        ports_grid.setContentsMargins(0, 0, 0, 0)
+        ports_grid.setSpacing(8)
+
         self.ip_label = QLabel("IPv4 Address:")
         self.ip_input = IPLineEdit("127.0.0.1")
         self.ip_input.setFixedWidth(120)
         self.port_spacer = QLabel("  ")
+        
+        self.sender_port_label = QLabel("Port Number:")
         self.sender_port_input = QSpinBox()
         self.sender_port_input.setRange(1, 65535)
         self.sender_port_input.setValue(512)
         self.sender_port_input.setFixedWidth(90)
         
-        for w in [self.ip_label, self.ip_input, self.port_spacer, QLabel("Port Number:"), self.sender_port_input]:
-            left_port_layout.addWidget(w)
+        self.dest_port_label = QLabel("Destination Port:")
+        self.dest_port_input = QSpinBox()
+        self.dest_port_input.setRange(1, 65535)
+        self.dest_port_input.setValue(123)
+        self.dest_port_input.setFixedWidth(90)
+
+        ports_grid.addWidget(self.ip_label, 0, 0)
+        ports_grid.addWidget(self.ip_input, 0, 1)
+        ports_grid.addWidget(self.port_spacer, 0, 2)
+        ports_grid.addWidget(self.sender_port_label, 0, 3)
+        ports_grid.addWidget(self.sender_port_input, 0, 4)
+
+        ports_grid.addWidget(self.dest_port_label, 1, 3)
+        ports_grid.addWidget(self.dest_port_input, 1, 4)
+
+        left_port_layout.addWidget(left_grid_widget)
         left_port_layout.addStretch() 
 
         right_port_container = QWidget()
         right_port_layout = QHBoxLayout(right_port_container)
         right_port_layout.addStretch()
+        
         self.rec_ip_label = QLabel("IPv4 Address:")
         self.rec_ip_input = IPLineEdit("127.0.0.5")
         self.rec_ip_input.setFixedWidth(120)
@@ -154,7 +179,8 @@ class UIBuilder:
         self.receiver_port_input.setFixedWidth(90)
         
         for w in [self.rec_ip_label, self.rec_ip_input, self.rec_port_spacer, QLabel("Port Number:"), self.receiver_port_input]:
-            right_port_layout.addWidget(w)
+            right_port_layout.addWidget(w, alignment=Qt.AlignmentFlag.AlignTop)
+            
         right_port_layout.addStretch()
 
         self.ip_widgets = [self.ip_label, self.ip_input, self.port_spacer, self.rec_ip_label, self.rec_ip_input, self.rec_port_spacer]
@@ -196,7 +222,6 @@ class MainWindow(QMainWindow):
         self.connect_signals()
         self.apply_theme() 
         self.toggle_ip_fields(self.ui.protocol_combo.currentText())
-
 
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
@@ -254,7 +279,6 @@ class MainWindow(QMainWindow):
         else:
             self.ui.pic_right.clear()
 
-
     def simulate_send(self):
         protocol = self.ui.protocol_combo.currentText()
         if not self.selected_file_path:
@@ -264,7 +288,6 @@ class MainWindow(QMainWindow):
         if protocol == "UDP":
             pass
             
-
     def write_log(self, text, side, status):
         match status:
             case "success":
@@ -279,4 +302,3 @@ class MainWindow(QMainWindow):
         widget = self.ui.log_left if side == "left" else self.ui.log_right
         widget.append(f"<span style='color: {color};'>{text}</span>")
         QApplication.processEvents()
-
