@@ -145,7 +145,7 @@ class UIBuilder:
         right_port_layout = QHBoxLayout(right_port_container)
         right_port_layout.addStretch()
         self.rec_ip_label = QLabel("IPv4 Address:")
-        self.rec_ip_input = IPLineEdit("127.0.0.1")
+        self.rec_ip_input = IPLineEdit("127.0.0.5")
         self.rec_ip_input.setFixedWidth(120)
         self.rec_port_spacer = QLabel("  ")
         self.receiver_port_input = QSpinBox()
