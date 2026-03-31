@@ -25,14 +25,14 @@ class Manager:
 
     def change_protocol(self, protocol_name):
         self.protocol = protocol_name
-        self.window.write_log(f"~ Protocol switched to {protocol_name}", "left", "info")
+        self.window.write_log(f"~ SYS: Protocol switched to {protocol_name}", "left", "info")
 
     def select_file(self):
         self.selected_source_image = self.window.open_file()
         if self.selected_source_image:
-            self.window.write_log(f"~ Image loaded: {self.selected_source_image}", "left", "success")
+            self.window.write_log(f"~ SYS: Image loaded: {self.selected_source_image}", "left", "success")
         else:
-            self.window.write_log(f"~ Error: No file selected.", "left", "error")
+            self.window.write_log(f"~ SYS: Error: No file selected.", "left", "error")
 
     def set_corruption_chance(self, value):
         self.corruption_chance = value
@@ -52,32 +52,30 @@ class Manager:
 
         # Ensure input file exists
         if self.selected_source_image is None:
-            self.window.write_log("~ ERROR: No file selected.", "left", "error")
+            self.window.write_log("~ SYS: ERROR: No file selected.", "left", "error")
             return
 
         portNumberA = int(self.window.ui.sender_port_input.text().strip())
+        dest_port = int(self.window.ui.dest_port_input.text().strip())
         portNumberB = int(self.window.ui.receiver_port_input.text().strip())
 
         ipAddressA = ipa.IPv4Address(self.window.ui.ip_input.text().strip())
         ipAddressB = ipa.IPv4Address(self.window.ui.rec_ip_input.text().strip())
 
         # Create devices
-        deviceA = device.Device(port_number=portNumberA, ip_address=ipAddressA, name="Device_A")
-        deviceB = device.Device(port_number=portNumberB, ip_address=ipAddressB, name="Device_B")
+        deviceA = device.Device(port_number=portNumberA, ip_address=ipAddressA, name="Device_A", window = self.window, pane = "left")
+        deviceB = device.Device(port_number=portNumberB, ip_address=ipAddressB, name="Device_B", window = self.window, pane = "right")
 
         # Simulate sending the message from Device A to Device B
-        self.window.write_log(f"~ Preparing packet...", "left", "info")
-        message = deviceA.send_message(dest_port=portNumberB, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
+        message = deviceA.send_message(dest_port=dest_port, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
 
-        self.window.write_log(f"~ Payload dispatched.", "left", "success")
         deviceB.receive_message(message, output_file_name=output_file_name)
 
-        self.window.write_log(f"~ Packet received.", "right", "success")
+
         if os.path.exists(output_file_name):
-            self.window.write_log(f"~ Payload read successfully.", "right", "success")
+            self.window.write_log(f"~ SYS: Payload read successfully.", "right", "success")
             self.window.set_received_image(output_file_name)
         else:
-            self.window.write_log(f"~ Payload read failed, may have been corrupted.", "right", "error")
             self.window.set_received_image(None)
         
 
