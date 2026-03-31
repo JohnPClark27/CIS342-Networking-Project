@@ -19,12 +19,12 @@ def read_image_as_bytes(file_path):
         print(f"UDP: Error: File not found at {file_path}")
         return None
     
-def write_bytes_to_image(payload_bytes, output_path):
-    '''
-    Given a string of bytes representing an image, returns the image at the specified path
-    '''
-    with open(output_path, "wb") as f:
-        f.write(payload_bytes)
+# def write_bytes_to_image(payload_bytes, output_path):
+#     '''
+#     Given a string of bytes representing an image, returns the image at the specified path
+#     '''
+#     with open(output_path, "wb") as f:
+#         f.write(payload_bytes)
 
 # === Extracts parts from segments ===
 def extract_payload(segment):
@@ -135,15 +135,24 @@ def create_message(src_port, dest_port, payload):
 
     return segments
 
-def reassemble_message(segments, output_file_name = "reassembled.png"):
+def reassemble_message(segments):
     '''
     Given a list of segments, verifies the checksum of each segment and reassembles the payload if the segment is valid.
-    Writes the reassembled payload to an image file.
-    Returns true if not corrupted, false otherwise
+    Returns None if corrupted, and a struct containing the header fields and the payload (in bytes) if not
     '''
     reassembled = bytearray() # using bytearray for efficient concatenation of bytes
 
     was_corrupted = False
+
+    # Extracting header
+    header = extract_header(segments[0])
+    # print("UDP: Header (binary): ", header)
+    unpacked_header = struct.unpack(HEADER_FORMAT, header)
+    print("UDP: Header (unpacked): ", unpacked_header)
+    # print("src_port: ", unpacked_header[0])
+    # print("dest_port: ", unpacked_header[1])
+    # print("payload_length: ", unpacked_header[2])
+    # print("checksum: ", unpacked_header[3])
 
     for segment in segments:
         if verify_checksum(segment):
@@ -154,8 +163,7 @@ def reassemble_message(segments, output_file_name = "reassembled.png"):
 
     if was_corrupted:
         print("UDP: Invalid segment detected.")
-        return False
+        return None
     else:
         print("UDP: Message successfully reassembled...")
-        write_bytes_to_image(reassembled, output_file_name)
-        return True
+        return unpacked_header, reassembled
