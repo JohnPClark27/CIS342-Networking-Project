@@ -34,7 +34,14 @@ class Device():
         
         print(f"DVC: {self.name} is receiving a message...")
         udp_datagram = ntwk.recv(message)
-        if (udp.reassemble_message(udp_datagram, output_file_name)):
+        if udp.reassemble_message(udp_datagram) is not None:
+            header, image_bytes = udp.reassemble_message(udp_datagram)
+            print("src_port: ", header[0])
+            print("dest_port: ", header[1])
+            print("payload_length: ", header[2])
+            print("checksum: ", header[3])
+            with open(output_file_name, "wb") as f:
+                f.write(image_bytes)
             print(f"DVC: {self.name} received the message: {output_file_name}.")
         else:
             print(f"DVC: {self.name} did not received the message (it was probably corrupted).")
