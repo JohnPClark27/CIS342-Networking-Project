@@ -6,6 +6,9 @@ from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
 import ipaddress as ipa
 
 class Manager:
+    '''
+    Manages the overall application, including the GUI and the devices.
+    '''
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
@@ -41,6 +44,9 @@ class Manager:
 
 
     def on_send(self):
+        '''
+        Handles the send button click event. It prepares the devices and simulates sending a message from Device A to Device B.
+        '''
         output_file_name = "received_image.png"
 
         # Delete output file if it already exists so it doesn't interfere with the next transmission
@@ -55,6 +61,7 @@ class Manager:
             self.window.write_log("~ SYS: ERROR: No file selected.", "left", "error")
             return
 
+        # Read port numbers and IP addresses from the GUI
         portNumberA = int(self.window.ui.sender_port_input.text().strip())
         dest_port = int(self.window.ui.dest_port_input.text().strip())
         portNumberB = int(self.window.ui.receiver_port_input.text().strip())
@@ -68,16 +75,14 @@ class Manager:
 
         # Simulate sending the message from Device A to Device B
         message = deviceA.send_message(dest_port=dest_port, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
-
         deviceB.receive_message(message, output_file_name=output_file_name)
-
 
         if os.path.exists(output_file_name):
             self.window.write_log(f"~ SYS: Payload read successfully.", "right", "success")
             self.window.set_received_image(output_file_name)
         else:
             self.window.set_received_image(None)
-        
+
 
 
 if __name__ == "__main__":

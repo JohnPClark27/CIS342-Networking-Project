@@ -4,6 +4,8 @@ Project: Local Simulation of UDP Protocol in Python
 
 Purpose: Build an understanding of UDP Datagrams and how they interact with each other.
 
+Usage: The main program is in manager.py. Run it to start the program.
+
 Initially, data will be "sent" between two devices to not have to worry about IP.
 
 Data for the UDP Datagram will be stored in a python struct with variables for: 

@@ -27,21 +27,22 @@ class Device():
 
     def receive_message(self, message, output_file_name):
         '''
-        Receives a message and reassembles it into the original payload.
-        The reassembled payload is saved to the specified output file name.
+        Receives a message and attempts to reassemble it. If successful, writes the payload to the specified output file.
         '''
 
         self.window.write_log(f"~ DVC: Waiting for message...", self.pane, "info")
         udp_datagram = ntwk.recv(message)
-        if udp.reassemble_message(udp_datagram) is not None:
+        if udp.reassemble_message(udp_datagram) is not None: # check if the datagram is not corrupted
             header, image_bytes = udp.reassemble_message(udp_datagram)
             dest_port = header[1]
+            # Check if message is intended for this device by comparing the dest port in the header with this device's port number
             if dest_port == self.port_number:
                 self.window.write_log(f"~ DVC: Message received from port {header[0]}...", self.pane, "success")
                 with open(output_file_name, "wb") as f:
                     f.write(image_bytes)
                     self.window.write_log(f"~ DVC: Message successfully reassembled...", self.pane, "success")
             else:
+                # The message is not intended for this device, so we can ignore it or log an error
                 self.window.write_log(f"~ DVC: ERROR: Port unreachable")
         else:
             self.window.write_log(f"~ DVC: ERROR: datagram corrupted...", self.pane, "error")
