@@ -43,7 +43,7 @@ class Device():
                     self.window.write_log(f"~ DVC: Message successfully reassembled...", self.pane, "success")
             else:
                 # The message is not intended for this device, so we can ignore it or log an error
-                self.window.write_log(f"~ DVC: ERROR: Port unreachable")
+                self.window.write_log(f"~ DVC: ERROR: Port unreachable", self.pane, "error")
         else:
             self.window.write_log(f"~ DVC: ERROR: datagram corrupted...", self.pane, "error")
 
