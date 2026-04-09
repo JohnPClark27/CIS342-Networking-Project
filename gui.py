@@ -36,6 +36,7 @@ class GlassTheme:
                 QSpinBox::down-arrow {{ image: url("{base_dir}/gui_components/white-down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 #ThemeBtn {{ background-color: #f5f5f7; border: 1px solid #d1d1d6; border-radius: 4px; }}
                 #ThemeBtn:hover {{ background-color: #e5e5ea; border: 1px solid #007aff; }}
+                QLineEdit[readOnly="true"] {{ background-color: #1a1a1a; color: #888; }}
                 {slider_css} {log_css}
             """
         else:
@@ -63,6 +64,7 @@ class GlassTheme:
                 QSpinBox::down-arrow {{ image: url("{base_dir}/gui_components/down-arrow-svgrepo-com.svg"); width: 12px; height: 12px; }}
                 #ThemeBtn {{ background-color: #333333; border: 1px solid #555555; border-radius: 4px; }}
                 #ThemeBtn:hover {{ background-color: #444446; border: 1px solid #007aff; }}
+                QLineEdit[readOnly="true"] {{ background-color: #e0e0e0; color: #666; }}
                 {slider_css} {log_css}
             """
 
@@ -73,7 +75,8 @@ class IPLineEdit(QLineEdit):
         self.setValidator(QRegularExpressionValidator(regex, self))
 
     def mousePressEvent(self, event):
-        self.clear()
+        if not self.isReadOnly():
+            self.clear()
         super().mousePressEvent(event)
 
 class UIBuilder:
@@ -139,6 +142,7 @@ class UIBuilder:
         self.ip_label = QLabel("IPv4 Address:")
         self.ip_input = IPLineEdit("127.0.0.1")
         self.ip_input.setFixedWidth(120)
+        self.ip_input.setReadOnly(True)
         self.port_spacer = QLabel("  ")
         
         self.sender_port_label = QLabel("Port Number:")
@@ -185,6 +189,7 @@ class UIBuilder:
         self.rec_ip_label = QLabel("IPv4 Address:")
         self.rec_ip_input = IPLineEdit("127.0.0.5")
         self.rec_ip_input.setFixedWidth(120)
+        self.rec_ip_input.setReadOnly(True)
         self.rec_port_spacer = QLabel("  ")
         self.rec_port_label = QLabel("Port Number:")
         self.receiver_port_input = QSpinBox()
@@ -193,6 +198,7 @@ class UIBuilder:
         self.receiver_port_input.setFixedWidth(90)
         
         self.clear_logs_btn = QPushButton("Clear Logs")
+        self.clear_all_btn = QPushButton("Clear All")
         
         right_ports_grid.addWidget(self.rec_ip_label, 0, 0)
         right_ports_grid.addWidget(self.rec_ip_input, 0, 1)
@@ -200,6 +206,7 @@ class UIBuilder:
         right_ports_grid.addWidget(self.rec_port_label, 0, 3)
         right_ports_grid.addWidget(self.receiver_port_input, 0, 4)
         right_ports_grid.addWidget(self.clear_logs_btn, 1, 0, 1, 2)
+        right_ports_grid.addWidget(self.clear_all_btn, 1, 3, 1, 2)
 
         right_port_layout.addWidget(right_grid_widget, alignment=Qt.AlignmentFlag.AlignTop)
         right_port_layout.addStretch()
@@ -237,6 +244,7 @@ class MainWindow(QMainWindow):
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
         self.ui.clear_logs_btn.clicked.connect(self.reset_logs)
+        self.ui.clear_all_btn.clicked.connect(self.clear_all)
 
     def toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
@@ -257,6 +265,14 @@ class MainWindow(QMainWindow):
         for log in (self.ui.log_left, self.ui.log_right):
             log.setText("<span style='color: white; font-weight: bold;'>Logs:</span>")
             log.setMinimumHeight(120)
+
+    def clear_all(self):
+        self.ui.pic_left.clear()
+        self.ui.pic_right.clear()
+        
+        self.selected_file_path = None
+        
+        self.reset_logs()
 
     def toggle_ip_fields(self, protocol_name):
         self.reset_logs()
