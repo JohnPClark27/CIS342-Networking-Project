@@ -57,6 +57,7 @@ def pack_header(src_port, dest_port, payload_length, checksum = 0):
     '''
     length = 8 + payload_length
     result = struct.pack(HEADER_FORMAT, src_port, dest_port, length, checksum)
+    print("UDP: Packed header (binary): ", result)
     return result
 
 def calc_segment(src_port, dest_port, payload_bytes):
