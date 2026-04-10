@@ -9,26 +9,33 @@ def corrupt_segment(segment):
     '''
     corrupted = bytearray(segment)
 
-    index = random.randint(8, len(segment) - 1) # avoid header
-    corrupted[index] ^= 0xFF # flip all bits in the byte at the random index to corrupt the segment
+    if len(segment) > 8:
+        index = random.randint(8, len(segment) - 1) # avoid header
+        corrupted[index] ^= 0xFF # flip all bits in the byte at the random index to corrupt the segment
+    else:
+        corrupted[0] ^= 0xFF
 
     return bytes(corrupted)
 
-def send(message, corrupt_chance = 0, delay = 0):
+def send(segment, corrupt_chance = 0, drop_chance = 0, delay = 0):
     '''
     Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
     '''
-    print(f"NTWK: Transmitting message...")
+    print(f"NTWK: Received send() request...")
 
     time.sleep(delay) # simulate some delay
 
-    if random.randint(0, 100) < corrupt_chance:
+    roll = random.randint(1, 100)
+    if roll < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
-        message[0] = corrupt_segment(message[0]) # corrupt a segment
-        return message
+        segment = corrupt_segment(segment) # corrupt a segment
+        return segment
+    elif roll < drop_chance+corrupt_chance:
+        print("NTWK: Message dropped during transmission.")
+        return
     else:
         print("NTWK: Message transmitted successfully.")
-        return message
+        return segment
     
 def recv(message):
     '''
