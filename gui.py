@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
 
     def toggle_ip_fields(self, protocol_name):
         self.reset_logs()
-        self.write_log(f"~ Protocol switched to {protocol_name}", "left", "info")
+        self.write_log(f"~ Protocol set to {protocol_name}", "left", "info")
         show_ip = protocol_name in ("UDP", "TCP", "RUDP")
         for w in self.ui.ip_widgets:
             w.setVisible(show_ip)

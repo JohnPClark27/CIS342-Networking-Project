@@ -28,7 +28,7 @@ class Manager:
 
     def change_protocol(self, protocol_name):
         self.protocol = protocol_name
-        self.window.write_log(f"~ SYS: Protocol switched to {protocol_name}", "left", "info")
+        self.window.write_log(f"~ SYS: Protocol set to {protocol_name}", "left", "info")
 
     def select_file(self):
         self.selected_source_image = self.window.open_file()
@@ -74,8 +74,8 @@ class Manager:
         deviceB = device.Device(port_number=portNumberB, ip_address=ipAddressB, name="Device_B", window = self.window, pane = "right")
 
         # Simulate sending the message from Device A to Device B
-        message = deviceA.send_message(dest_port=dest_port, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
-        deviceB.receive_message(message, output_file_name=output_file_name)
+        deviceA.send_message(dest_ip=ipAddressB, dest_port=dest_port, payload=self.selected_source_image, corrupt_chance=self.corruption_chance)
+        deviceB.finalize_message(output_file_name=output_file_name)
 
         if os.path.exists(output_file_name):
             self.window.write_log(f"~ SYS: Payload read successfully.", "right", "success")

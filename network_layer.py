@@ -3,6 +3,14 @@ This module is a pseudo-network layer. It provides functionality to send message
 """
 import random, time
 
+devices = {} # maps (ip, port) to device
+
+def register_device(device):
+    '''
+    Registers a device on the network by adding it to the devices dictionary.
+    '''
+    devices[(str(device.ip_address), device.port_number)] = device
+
 def corrupt_segment(segment):
     '''
     Returns a corrupted version of the segment by flipping a random bit in the payload.
@@ -14,9 +22,9 @@ def corrupt_segment(segment):
 
     return bytes(corrupted)
 
-def send(message, corrupt_chance = 0, delay = 0):
+def send(message, dest_ip, dest_port, corrupt_chance = 0, delay = 0):
     '''
-    Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
+    Simulates sending a message over a network. The message may be corrupted with the specified chance.
     '''
     print(f"NTWK: Transmitting message...")
 
@@ -24,11 +32,14 @@ def send(message, corrupt_chance = 0, delay = 0):
 
     if random.randint(0, 100) < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
-        message[0] = corrupt_segment(message[0]) # corrupt a segment
-        return message
+        message = corrupt_segment(message) # corrupt something
+
+    key = (str(dest_ip), dest_port)
+
+    if key in devices:
+        devices[key].receive_message(message)
     else:
-        print("NTWK: Message transmitted successfully.")
-        return message
+        print("NTWK: Destination unreachable (likely unknown IP).")
     
 def recv(message):
     '''
