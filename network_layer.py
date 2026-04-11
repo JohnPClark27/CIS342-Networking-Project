@@ -17,7 +17,7 @@ def corrupt_segment(segment):
 
     return bytes(corrupted)
 
-def send(segment, corrupt_chance = 0, drop_chance = 0, delay = 0):
+def send(segment, channel, corrupt_chance = 0, drop_chance = 0, delay = 0.3):
     '''
     Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
     '''
@@ -29,16 +29,9 @@ def send(segment, corrupt_chance = 0, drop_chance = 0, delay = 0):
     if roll < corrupt_chance:
         print("NTWK: Message corrupted during transmission.")
         segment = corrupt_segment(segment) # corrupt a segment
-        return segment
+        channel.put(segment)
     elif roll < drop_chance+corrupt_chance:
         print("NTWK: Message dropped during transmission.")
-        return
     else:
         print("NTWK: Message transmitted successfully.")
-        return segment
-    
-def recv(message):
-    '''
-    Simulates receiving a message from a network. Currently purely an in-between step for simulation purposes.
-    '''
-    return message
+        channel.put(segment)

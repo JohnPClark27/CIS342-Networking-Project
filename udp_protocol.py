@@ -1,13 +1,16 @@
 import struct
+import queue
 
 HEADER_FORMAT = '!HHHH'
 CHUNK_SIZE = 1024
 
 class UdpProtocol():
-    def __init__(self, port_number, pane = "left", corrupt_chance = 0, drop_chance = 0):
-        self.port_number = port_number
-        self.pane = pane
+    def __init__(self, worker, pane, a_to_b, b_to_a,corrupt_chance = 0, drop_chance = 0):
 
+        self.worker = worker
+        self.pane = pane # Left device A; Right device B
+        self.a_to_b = a_to_b
+        self.b_to_a = b_to_a
         self.corrupt_chance = corrupt_chance
         self.drop_chance = drop_chance
 
@@ -16,11 +19,11 @@ class UdpProtocol():
 
     def segment(self, src_port, dest_port, payload_bytes):
         chunks = [payload_bytes[i:i+CHUNK_SIZE] for i in range(0, len(payload_bytes), CHUNK_SIZE)]
-        datagram = []
+        segments = []
         for chunk in chunks:
-            datagram.append(self.create_segment(src_port, dest_port, chunk))
+            segments.append(self.create_segment(src_port, dest_port, chunk))
 
-        return datagram
+        return segments
 
 
     def create_segment(self, src_port, dest_port, chunk):
@@ -32,7 +35,15 @@ class UdpProtocol():
         segment = struct.pack(HEADER_FORMAT, src_port, dest_port, length, checksum) + chunk
         return segment
 
-    def receive(self, raw_segment):
+    def receive(self):
+        try:
+            raw_segment = self.a_to_b.get(timeout=5.0)
+        except queue.Empty:
+            return None
+
+        if raw_segment == "END":
+            return "END"
+
         header = struct.unpack(HEADER_FORMAT, raw_segment[:8])
         payload = raw_segment[8:]
 
@@ -51,8 +62,7 @@ class UdpProtocol():
 
 
     def send(self, segments, network_layer):
-        results = []
-        for seg in segments:
-            result = network_layer.send(seg, self.corrupt_chance, self.drop_chance)
-            results.append(result)
-        return results
+        for i, seg in enumerate(segments):
+            self.worker.log_signal.emit(f"~ UDP: Sending segment {i+1}/{len(segments)}", self.pane, "info")
+            network_layer.send(seg, self.a_to_b, self.corrupt_chance, self.drop_chance)
+        self.a_to_b.put("END")
