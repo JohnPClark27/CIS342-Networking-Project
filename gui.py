@@ -91,21 +91,54 @@ class UIBuilder:
         self.mw.addToolBar(self.toolbar)
         self.protocol_combo = QComboBox()
         self.protocol_combo.addItems(["UDP", "RUDP", "TCP"])
-        self.protocol_combo.setMinimumWidth(80)
-        self.toolbar.addWidget(QLabel(" Transport Protocol: "))
+        self.protocol_combo.setMinimumWidth(70)
+        self.toolbar.addWidget(QLabel("Protocol: "))
         self.toolbar.addWidget(self.protocol_combo)
         spacer = QWidget()
-        spacer.setFixedWidth(40)
+        spacer.setFixedWidth(15)
         self.toolbar.addWidget(spacer)
-        self.toolbar.addWidget(QLabel(" Chance of Corruption: "))
+        
+        # Corruption Chance
+        self.toolbar.addWidget(QLabel("Corruption: "))
         self.corruption_slider = QSlider(Qt.Orientation.Horizontal)
         self.corruption_slider.setRange(0, 100)
         self.corruption_slider.setValue(5)
-        self.corruption_slider.setFixedWidth(150)
+        self.corruption_slider.setFixedWidth(100)
         self.toolbar.addWidget(self.corruption_slider)
         self.corruption_label = QLabel(" 5%")
-        self.corruption_label.setFixedWidth(45)
+        self.corruption_label.setFixedWidth(35)
         self.toolbar.addWidget(self.corruption_label)
+        
+        spacer2 = QWidget()
+        spacer2.setFixedWidth(10)
+        self.toolbar.addWidget(spacer2)
+        
+        # Drop Chance
+        self.toolbar.addWidget(QLabel("Drop: "))
+        self.drop_slider = QSlider(Qt.Orientation.Horizontal)
+        self.drop_slider.setRange(0, 100)
+        self.drop_slider.setValue(0)
+        self.drop_slider.setFixedWidth(100)
+        self.toolbar.addWidget(self.drop_slider)
+        self.drop_label = QLabel(" 0%")
+        self.drop_label.setFixedWidth(35)
+        self.toolbar.addWidget(self.drop_label)
+        
+        spacer3 = QWidget()
+        spacer3.setFixedWidth(10)
+        self.toolbar.addWidget(spacer3)
+        
+        # Transmission Delay
+        self.toolbar.addWidget(QLabel("Delay (ms): "))
+        self.delay_slider = QSlider(Qt.Orientation.Horizontal)
+        self.delay_slider.setRange(0, 1000)
+        self.delay_slider.setValue(0)
+        self.delay_slider.setFixedWidth(100)
+        self.toolbar.addWidget(self.delay_slider)
+        self.delay_label = QLabel(" 0ms")
+        self.delay_label.setFixedWidth(40)
+        self.toolbar.addWidget(self.delay_label)
+        
         expanding_spacer = QWidget()
         expanding_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toolbar.addWidget(expanding_spacer)
@@ -284,6 +317,17 @@ class MainWindow(QMainWindow):
     def update_corruption_label(self, value):
         self.ui.corruption_label.setText(f" {value}%")
 
+    def update_drop_label(self, value):
+        self.ui.drop_label.setText(f" {value}%")
+
+    def update_delay_label(self, value):
+        '''Updates the delay display label (deprecated, use update_delay_display instead).'''
+        pass
+
+    def update_delay_display(self, value):
+        '''Updates the delay slider label with the current milliseconds value.'''
+        self.ui.delay_label.setText(f" {value}ms")
+
     def open_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Images (*.png *.jpg *.jpeg)")
         if file_path:
@@ -330,3 +374,17 @@ class MainWindow(QMainWindow):
         widget = self.ui.log_left if side == "left" else self.ui.log_right
         widget.append(f"<span style='color: {color};'>{text}</span>")
         QApplication.processEvents()
+
+    def closeEvent(self, event):
+        '''Handle window close event to prevent crash warnings.'''
+        try:
+            # Disconnect all signals to prevent crashes during shutdown
+            self.ui.send_file_btn.clicked.disconnect()
+            self.ui.select_file_btn.clicked.disconnect()
+            self.ui.protocol_combo.currentTextChanged.disconnect()
+            self.ui.clear_logs_btn.clicked.disconnect()
+            self.ui.clear_all_btn.clicked.disconnect()
+            self.ui.theme_btn.clicked.disconnect()
+        except:
+            pass
+        super().closeEvent(event)

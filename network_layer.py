@@ -1,7 +1,8 @@
 """
-This module is a pseudo-network layer. It provides functionality to send messages over the network, with a chance of corruption during transmission.
+This module is a pseudo-network layer. It provides functionality to send datagrams over the network, with a chance of corruption during transmission.
 """
 import random, time
+import config
 
 devices = {} # maps (ip, port) to device
 
@@ -22,27 +23,40 @@ def corrupt_segment(segment):
 
     return bytes(corrupted)
 
-def send(message, dest_ip, dest_port, corrupt_chance = 0, delay = 0):
+def send(datagram, dest_ip, dest_port):
     '''
-    Simulates sending a message over a network. The message may be corrupted with the specified chance.
+    Simulates sending a datagram over a network. The datagram may be corrupted with the specified chance.
     '''
-    print(f"NTWK: Transmitting message...")
+    # Get current corruption and drop chances and delay from config
+    # This is more realistic, and allows the chances and delay to be dynamically adjusted from the GUI and ensures that the most up-to-date values are used for each transmission.
+    corrupt_chance = config.corruption_chance
+    drop_chance = config.drop_chance
+    delay = config.delay
 
+    print(f"NTWK: Sending datagram...")
+
+    # Lookup destination device based on dest_ip and dest_port
+    dest_device = devices.get((str(dest_ip), dest_port))
+    if dest_device is None:
+        print(f"NTWK: ERROR: Destination device with IP {dest_ip} and port {dest_port} not found on the network.")
+        return
+    
     time.sleep(delay) # simulate some delay
 
-    if random.randint(0, 100) < corrupt_chance:
-        print("NTWK: Message corrupted during transmission.")
-        message = corrupt_segment(message) # corrupt something
+    # Handle END marker specially - always deliver it without corruption or dropping
+    if datagram == b"END":
+        print("NTWK: END marker sent successfully.")
+        dest_device.buffer.put(datagram)
+        return
 
-    key = (str(dest_ip), dest_port)
-
-    if key in devices:
-        devices[key].receive_message(message)
+    roll = random.randint(0, 100)
+    if roll < corrupt_chance:
+        print("NTWK: datagram corrupted during transmission!")
+        datagram = corrupt_segment(datagram) # corrupt the segment
+        dest_device.buffer.put(datagram) # deliver the corrupted segment to the destination device's buffer
+    elif roll < corrupt_chance + drop_chance:
+        print("NTWK: datagram dropped during transmission!")
+        return # drop the segment by not delivering it to the destination device
     else:
-        print("NTWK: Destination unreachable (likely unknown IP).")
-    
-def recv(message):
-    '''
-    Simulates receiving a message from a network. Currently purely an in-between step for simulation purposes.
-    '''
-    return message
+        print("NTWK: datagram sent successfully.")
+        dest_device.buffer.put(datagram) # deliver the segment to the destination device's buffer
