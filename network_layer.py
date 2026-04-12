@@ -17,7 +17,7 @@ def corrupt_segment(segment):
 
     return bytes(corrupted)
 
-def send(segment, channel, corrupt_chance = 0, drop_chance = 0, delay = 0.3):
+def send(segment, channel, corrupt_chance = 0, drop_chance = 0, delay = 0.001):
     '''
     Simulates sending a message over the network. Randomly corrupts the first chunk of the message with a specified chance.
     '''
