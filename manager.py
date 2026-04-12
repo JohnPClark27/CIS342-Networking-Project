@@ -117,7 +117,8 @@ class Manager:
             name="Device2",
             pane="right",
             output_file_name=output_file_name,
-            protocol=self.protocol
+            protocol=self.protocol,
+            sender_ip=ipAddressA,
         )
 
         self.sender.log_signal.connect(self.window.write_log)

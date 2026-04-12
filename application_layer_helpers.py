@@ -3,7 +3,7 @@ Helper functions for the application layer of the simulation.
 This is not a 1:1 implementation of any specific application layer protocol, but rather a collection of functions that provide the necessary functionality for the simulation.
 """
 
-PAYLOAD_CHUNK_SIZE = 65527
+PAYLOAD_CHUNK_SIZE = 65527 # maximum theoretical UDP datagram size
 
 def read_image_as_bytes(file_path):
     '''
@@ -17,11 +17,11 @@ def read_image_as_bytes(file_path):
         print(f"APP: Error: File not found at {file_path}")
         return None
     
-def split_payload(payload):
+def split_payload(payload, chunk_size = PAYLOAD_CHUNK_SIZE):
     '''
     Splits the payload into chunks of size PAYLOAD_CHUNK_SIZE.
     '''
     chunks = []
-    for i in range(0, len(payload), PAYLOAD_CHUNK_SIZE):
-        chunks.append(payload[i:i+PAYLOAD_CHUNK_SIZE])
+    for i in range(0, len(payload), chunk_size):
+        chunks.append(payload[i:i+chunk_size])
     return chunks

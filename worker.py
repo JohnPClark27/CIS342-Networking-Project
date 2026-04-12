@@ -28,7 +28,7 @@ class ReceiverWorker(QThread):
     log_signal = Signal(str, str, str)
     image_signal = Signal(str)
 
-    def __init__(self, port, ip_address, name, pane, output_file_name, protocol):
+    def __init__(self, port, ip_address, name, pane, output_file_name, protocol, sender_ip=None, sender_port=None):
         super().__init__()
         self.port = port
         self.ip_address = ip_address
@@ -36,11 +36,12 @@ class ReceiverWorker(QThread):
         self.pane = pane
         self.output_file_name = output_file_name
         self.protocol = protocol
+        self.sender_ip = sender_ip
 
     def run(self):
         device2 = Device(self.port, self.ip_address, self.name, self.pane, self.protocol, self)
 
-        output = device2.receive_message(self.output_file_name)
+        output = device2.receive_message(self.output_file_name, sender_ip=self.sender_ip)
 
         if os.path.exists(self.output_file_name):
             self.image_signal.emit(self.output_file_name)
