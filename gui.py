@@ -2,7 +2,7 @@ import sys, os, ipaddress
 from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, QWidget, QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
 from PySide6.QtCore import (Qt, QRegularExpression)
 from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
-import device
+import config
 
 class GlassTheme:
     @staticmethod
@@ -102,13 +102,12 @@ class UIBuilder:
         self.toolbar.addWidget(QLabel("Corruption: "))
         self.corruption_slider = QSlider(Qt.Orientation.Horizontal)
         self.corruption_slider.setRange(0, 100)
-        self.corruption_slider.setValue(5)
+        self.corruption_slider.setValue(config.corruption_chance)
         self.corruption_slider.setFixedWidth(100)
         self.toolbar.addWidget(self.corruption_slider)
-        self.corruption_label = QLabel(" 5%")
+        self.corruption_label = QLabel(f" {config.corruption_chance}%")
         self.corruption_label.setFixedWidth(35)
         self.toolbar.addWidget(self.corruption_label)
-        
         spacer2 = QWidget()
         spacer2.setFixedWidth(10)
         self.toolbar.addWidget(spacer2)
@@ -117,10 +116,10 @@ class UIBuilder:
         self.toolbar.addWidget(QLabel("Drop: "))
         self.drop_slider = QSlider(Qt.Orientation.Horizontal)
         self.drop_slider.setRange(0, 100)
-        self.drop_slider.setValue(0)
+        self.drop_slider.setValue(config.drop_chance)
         self.drop_slider.setFixedWidth(100)
         self.toolbar.addWidget(self.drop_slider)
-        self.drop_label = QLabel(" 0%")
+        self.drop_label = QLabel(f" {config.drop_chance}%")
         self.drop_label.setFixedWidth(35)
         self.toolbar.addWidget(self.drop_label)
         
@@ -132,10 +131,10 @@ class UIBuilder:
         self.toolbar.addWidget(QLabel("Delay (ms): "))
         self.delay_slider = QSlider(Qt.Orientation.Horizontal)
         self.delay_slider.setRange(0, 1000)
-        self.delay_slider.setValue(0)
+        self.delay_slider.setValue(int(config.delay * 1000))
         self.delay_slider.setFixedWidth(100)
         self.toolbar.addWidget(self.delay_slider)
-        self.delay_label = QLabel(" 0ms")
+        self.delay_label = QLabel(f" {int(config.delay * 1000)}ms")
         self.delay_label.setFixedWidth(40)
         self.toolbar.addWidget(self.delay_label)
         
@@ -270,6 +269,7 @@ class MainWindow(QMainWindow):
         self.ui = UIBuilder(self)
         self.is_dark_mode = False
         self.selected_file_path = None 
+        self.receiver_has_image = False 
         self.connect_signals()
         self.apply_theme() 
         self.toggle_ip_fields(self.ui.protocol_combo.currentText())
@@ -283,6 +283,21 @@ class MainWindow(QMainWindow):
         self.is_dark_mode = not self.is_dark_mode
         self.apply_theme()
 
+    def update_placeholders(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
+        if self.is_dark_mode:
+            icon_path = f"{base_dir}/gui_components/photos-white-filled-svgrepo-com.svg"
+        else:
+            icon_path = f"{base_dir}/gui_components/photos-filled-svgrepo-com.svg"
+            
+        placeholder = QPixmap(icon_path).scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # Only set the placeholder if an actual image hasn't been loaded
+        if not self.selected_file_path:
+            self.ui.pic_left.setPixmap(placeholder)
+        if not self.receiver_has_image:
+            self.ui.pic_right.setPixmap(placeholder)
+
     def apply_theme(self):
         self.setStyleSheet(GlassTheme.get_style(self.is_dark_mode))
         
@@ -293,6 +308,7 @@ class MainWindow(QMainWindow):
             icon_path = f"{base_dir}/gui_components/moon-svgrepo-com.svg"
             
         self.ui.theme_btn.setIcon(QIcon(icon_path))
+        self.update_placeholders()
 
     def reset_logs(self):
         for log in (self.ui.log_left, self.ui.log_right):
@@ -300,11 +316,9 @@ class MainWindow(QMainWindow):
             log.setMinimumHeight(120)
 
     def clear_all(self):
-        self.ui.pic_left.clear()
-        self.ui.pic_right.clear()
-        
         self.selected_file_path = None
-        
+        self.receiver_has_image = False
+        self.update_placeholders()
         self.reset_logs()
 
     def toggle_ip_fields(self, protocol_name):
@@ -338,7 +352,10 @@ class MainWindow(QMainWindow):
             )
             self.ui.pic_left.setPixmap(pixmap)
             return file_path
-        self.ui.pic_left.clear()
+        
+        # If they cancelled the dialog, revert to placeholder
+        self.selected_file_path = None
+        self.update_placeholders()
         return None
 
     def set_received_image(self, image_path):
@@ -348,8 +365,10 @@ class MainWindow(QMainWindow):
                 Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
             )
             self.ui.pic_right.setPixmap(pixmap)
+            self.receiver_has_image = True
         else:
-            self.ui.pic_right.clear()
+            self.receiver_has_image = False
+            self.update_placeholders()
 
     def simulate_send(self):
         protocol = self.ui.protocol_combo.currentText()
