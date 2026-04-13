@@ -49,7 +49,7 @@ def unpack_rudp_segment(udp_datagram):
     
     return rudp_seq_num, payload_bytes
 
-def wait_for_ack(expected_seq, device, sender_dest_ip, sender_dest_port, timeout=0.2):
+def wait_for_ack(device, sender_dest_ip, sender_dest_port, timeout=0.2):
     '''
     Waits for an ACK packet with the expected sequence number in the device's buffer.
     Returns True if matching ACK received, False if timeout occurs.
@@ -71,14 +71,11 @@ def wait_for_ack(expected_seq, device, sender_dest_ip, sender_dest_port, timeout
             # Check if the payload is an ACK packet
             if is_ack_packet(payload):
                 ack_seq = extract_ack_seq_num(payload)
-                if ack_seq == expected_seq:
-                    # Found the ACK we want! Put back any pending packets first
-                    for pending in pending_packets:
-                        device.buffer.put(pending)
-                    return True
-                else:
-                    # Not the ACK we're waiting for, save it
-                    pending_packets.append(packet)
+
+                for pending in pending_packets:
+                    device.buffer.put(pending)
+                print(f"ACK FOUND: {ack_seq}")
+                return ack_seq
             else:
                 # Not an ACK, save it
                 pending_packets.append(packet)
@@ -90,4 +87,5 @@ def wait_for_ack(expected_seq, device, sender_dest_ip, sender_dest_port, timeout
     # Timeout occurred, put all packets back
     for pending in pending_packets:
         device.buffer.put(pending)
-    return False
+    print(f"ACK NOT FOUND")
+    return None
