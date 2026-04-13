@@ -76,11 +76,13 @@ class Device():
                     ack_timeout = max(0.5, config.delay * 3 + 0.2)
                     received_ack = rudp.wait_for_ack(self, dest_ip, dest_port, ack_timeout)
                     if received_ack is not None:
-                        self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received", self.pane, "success")
+
                         if received_ack == seq_num:
+                            self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received", self.pane, "success")
                             seq_num += 1
                             break
-                        elif received_ack > 0 & received_ack < payload_length:
+                        elif 0 < received_ack < payload_length:
+                            self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received; different from expected {seq_num}", self.pane, "info")
                             seq_num = received_ack
                     
                     retry_count += 1
