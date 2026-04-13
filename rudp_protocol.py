@@ -25,7 +25,10 @@ def is_ack_packet(packet):
     return isinstance(packet, bytes) and len(packet) >= len(ACK_PREFIX) and packet[:len(ACK_PREFIX)] == ACK_PREFIX
 
 def extract_ack_seq_num(ack_packet):
-    '''Extracts sequence number from ACK packet.'''
+    '''
+    Extracts sequence number from ACK packet.
+    Returns the sequence number as an integer, or None if packet is not a valid ACK.
+    '''
     if is_ack_packet(ack_packet) and len(ack_packet) >= len(ACK_PREFIX) + 4:
         return struct.unpack('!I', ack_packet[len(ACK_PREFIX):len(ACK_PREFIX)+4])[0]
     return None
@@ -68,6 +71,9 @@ def wait_for_ack(expected_seq, device, sender_dest_ip, sender_dest_port, timeout
             # ACKs arrive as full UDP datagrams — extract the payload first
             payload = udp.extract_payload(packet) if isinstance(packet, bytes) and len(packet) > 8 else packet
 
+            if not udp.validate_udp_checksum(packet):
+                return None  # Invalid packet, ignore and continue waiting
+
             # Check if the payload is an ACK packet
             if is_ack_packet(payload):
                 ack_seq = extract_ack_seq_num(payload)
@@ -90,4 +96,4 @@ def wait_for_ack(expected_seq, device, sender_dest_ip, sender_dest_port, timeout
     # Timeout occurred, put all packets back
     for pending in pending_packets:
         device.buffer.put(pending)
-    return False
+    return None

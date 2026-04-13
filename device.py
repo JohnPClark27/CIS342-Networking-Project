@@ -70,7 +70,8 @@ class Device():
                     
                     # Timeout must exceed the network delay so ACKs can arrive before retransmitting
                     ack_timeout = max(0.5, config.delay * 3 + 0.2)
-                    if rudp.wait_for_ack(i, self, dest_ip, dest_port, timeout=ack_timeout):
+                    ack_packet = rudp.wait_for_ack(i, self, dest_ip, dest_port, timeout=ack_timeout)
+                    if ack_packet is not None:
                         self.worker.log_signal.emit(f"~ DVC: ACK {i} received", self.pane, "success")
                         break
                     
