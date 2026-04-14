@@ -5,6 +5,7 @@ from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
 import ipaddress as ipa
 from worker import SenderWorker, ReceiverWorker
 import config
+import network_layer as ntwk
 
 class Manager:
     '''
@@ -27,12 +28,7 @@ class Manager:
     def _on_window_close(self, event):
         '''Handle cleanup before window closes.'''
         try:
-            if self.sender and self.sender.isRunning():
-                self.sender.quit()
-                self.sender.wait()
-            if self.receiver and self.receiver.isRunning():
-                self.receiver.quit()
-                self.receiver.wait()
+            self.stop_threads()
         except:
             pass
         # Call the original closeEvent
@@ -46,7 +42,38 @@ class Manager:
         self.window.ui.corruption_slider.valueChanged.connect(self.set_corruption_chance)
         self.window.ui.drop_slider.valueChanged.connect(self.set_drop_chance)
         self.window.ui.delay_slider.valueChanged.connect(self.set_delay_from_gui)
+        self.window.ui.clear_all_btn.clicked.disconnect()
+        self.window.ui.clear_all_btn.clicked.connect(self.manager_clear_all)
 
+    def stop_threads(self):
+        """Safely shuts down running QThreads using cooperative cancellation."""
+        import network_layer as ntwk # Ensure this is imported at the top of manager.py
+
+        # 1. Ask threads politely to stop and feed poison pills
+        if self.receiver and self.receiver.isRunning():
+            self.receiver.requestInterruption()
+            dest_device = ntwk.devices.get((str(self.receiver.ip_address), self.receiver.port))
+            if dest_device:
+                dest_device.buffer.put(b"STOP")
+
+        if self.sender and self.sender.isRunning():
+            self.sender.requestInterruption()
+            src_device = ntwk.devices.get((str(self.sender.ip_address), self.sender.port_a))
+            if src_device:
+                src_device.buffer.put(b"STOP") # Breaks sender out of ACK waiting
+
+        # 2. Give them a fraction of a second to shut themselves down
+        if self.receiver and self.receiver.isRunning():
+            self.receiver.wait(300)
+        if self.sender and self.sender.isRunning():
+            self.sender.wait(300)
+
+        # 3. Only forcefully terminate if they are completely unresponsive
+        if self.receiver and self.receiver.isRunning():
+            self.receiver.terminate()
+        if self.sender and self.sender.isRunning():
+            self.sender.terminate()
+            
     def change_protocol(self, protocol_name):
         self.protocol = protocol_name
         self.window.write_log(f"~ SYS: Protocol set to {protocol_name}", "left", "info")
@@ -70,7 +97,13 @@ class Manager:
         config.delay = value
         self.window.update_delay_label(value)
 
+    def manager_clear_all(self):
+        """Kills threads first, then wipes the GUI so no stray logs appear."""
+        self.stop_threads()     
+        self.window.clear_all()
+
     def set_delay_from_gui(self, value):
+
         '''Converts milliseconds to seconds and sets the delay.'''
         delay_in_seconds = value / 1000.0
         self.set_delay(delay_in_seconds)
@@ -91,7 +124,7 @@ class Manager:
         if self.selected_source_image is None:
             self.window.write_log("~ SYS: ERROR: No file selected.", "left", "error")
             return
-
+        self.stop_threads() 
         # Read port numbers and IP addresses from the GUI
         portNumberA = int(self.window.ui.sender_port_input.text().strip())
         dest_port = int(self.window.ui.dest_port_input.text().strip())
@@ -103,7 +136,7 @@ class Manager:
         # Create sender and receiver devices, set their protocols, and connect their signals to the GUI
         self.sender = SenderWorker(
             src_port=portNumberA,
-            dest_port=portNumberB,
+            dest_port=dest_port,
             ip_address=ipAddressA,
             dest_ip_address=ipAddressB,
             name="Device1",
