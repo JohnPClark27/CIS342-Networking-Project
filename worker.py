@@ -43,7 +43,9 @@ class ReceiverWorker(QThread):
 
         output = device2.receive_message(self.output_file_name, sender_ip=self.sender_ip)
 
-        if os.path.exists(self.output_file_name):
+        if output and os.path.exists(self.output_file_name):
             self.image_signal.emit(self.output_file_name)
+        elif not output:
+            pass
         else:
             self.log_signal.emit("~ WRK: No output file found", self.pane, "error")
