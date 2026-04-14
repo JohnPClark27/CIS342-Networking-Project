@@ -43,6 +43,11 @@ class Device():
             chunks = app.split_payload(payload_bytes)
 
             for chunk in chunks:
+                # --- SAFE CANCELLATION CHECK ---
+                if self.worker.isInterruptionRequested():
+                    self.worker.log_signal.emit("~ DVC: Send manually aborted", self.pane, "warning")
+                    return 
+
                 udp_datagram = udp.build_udp_segment(self.port_number, dest_port, chunk)
                 
                 ntwk.send(udp_datagram, dest_ip, dest_port)
@@ -60,6 +65,11 @@ class Device():
             payload_length = len(chunks) # num of chunks
               
             while seq_num < payload_length:
+                # --- SAFE CANCELLATION CHECK ---
+                if self.worker.isInterruptionRequested():
+                    self.worker.log_signal.emit("~ DVC: Send manually aborted", self.pane, "warning")
+                    return 
+
                 chunk = chunks[seq_num]
                 rudp_datagram = rudp.build_rudp_header(chunk, seq_num=seq_num)
                 udp_datagram = udp.build_udp_segment(self.port_number, dest_port, rudp_datagram)
@@ -68,6 +78,11 @@ class Device():
                 # (In real networks, we'd have finite retries to avoid infinite loops)
                 retry_count = 0
                 while True:
+                    # --- SAFE CANCELLATION CHECK ---
+                    if self.worker.isInterruptionRequested():
+                        self.worker.log_signal.emit("~ DVC: Send manually aborted", self.pane, "warning")
+                        return 
+
                     ntwk.send(udp_datagram, dest_ip, dest_port)
                     self.worker.log_signal.emit(f"~ DVC: Sent RUDP segment {seq_num} (seq_num) [{seq_num+1}/{len(chunks)}], waiting for ACK...", self.pane, "info")
                     
@@ -111,6 +126,13 @@ class Device():
         # Continuously listen for incoming segments until we receive the special "END" segment indicating the end of the message
         while True:
             udp_datagram = self.buffer.get()
+            
+            # --- POISON PILL CHECK ---
+            if udp_datagram == b"STOP":
+                self.worker.log_signal.emit("~ DVC: Transmission manually stopped", self.pane, "warning")
+                self.buffer.queue.clear()
+                return None # Exit immediately to prevent assembling a corrupted file
+
             if udp_datagram == b"END": # if we receive the special "END" segment,
                 self.worker.log_signal.emit("~ DVC: End of file received", self.pane, "info")
                 break
