@@ -4,7 +4,6 @@ import network_layer as ntwk
 import application_layer_helpers as app
 import config
 import queue
-import struct
 
 class Device():
     '''
@@ -36,7 +35,7 @@ class Device():
         payload_bytes = app.read_image_as_bytes(file_path)
         if payload_bytes is None:
             print("APP: payload not loaded.")
-            exit()
+            return
         
         # UDP
         if self.protocol == "UDP":
@@ -55,11 +54,11 @@ class Device():
         # RUDP
         elif self.protocol == "RUDP":
             # Split payload into chunks
-            chunks = app.split_payload(payload_bytes, 14000) # 1400 is close to standard practical limit of UDP datagram
+            chunks = app.split_payload(payload_bytes, 1400) # 1400 is close to standard practical limit of UDP datagram
 
             seq_num = 0
             payload_length = len(chunks) # num of chunks
-            print(f"The NUMBER OF CHUNKS IS {payload_length}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+              
             while seq_num < payload_length:
                 chunk = chunks[seq_num]
                 rudp_datagram = rudp.build_rudp_header(chunk, seq_num=seq_num)
@@ -75,15 +74,16 @@ class Device():
                     # Timeout must exceed the network delay so ACKs can arrive before retransmitting
                     ack_timeout = max(0.5, config.delay * 3 + 0.2)
                     received_ack = rudp.wait_for_ack(self, dest_ip, dest_port, ack_timeout)
+
                     if received_ack is not None:
 
                         if received_ack == seq_num:
                             self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received", self.pane, "success")
                             seq_num += 1
                             break
-                        elif 0 < received_ack < payload_length:
+                        elif received_ack + 1 < payload_length:
                             self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received; different from expected {seq_num}", self.pane, "info")
-                            seq_num = received_ack
+                            seq_num = received_ack +1
                     
                     retry_count += 1
                     self.worker.log_signal.emit(f"~ DVC: Timeout waiting for ACK {seq_num}, retransmitting... (attempt {retry_count})", self.pane, "warning")

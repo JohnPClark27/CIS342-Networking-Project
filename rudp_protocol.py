@@ -68,6 +68,11 @@ def wait_for_ack(device, sender_dest_ip, sender_dest_port, timeout=0.2):
             # ACKs arrive as full UDP datagrams — extract the payload first
             payload = udp.extract_payload(packet) if isinstance(packet, bytes) and len(packet) > 8 else packet
 
+            is_valid = udp.validate_udp_checksum(packet)
+            if not is_valid:
+                for pending in pending_packets:
+                    device.buffer.put(pending)
+                return None
             # Check if the payload is an ACK packet
             if is_ack_packet(payload):
                 ack_seq = extract_ack_seq_num(payload)
