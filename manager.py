@@ -42,14 +42,30 @@ class Manager:
         self.window.ui.corruption_slider.valueChanged.connect(self.set_corruption_chance)
         self.window.ui.drop_slider.valueChanged.connect(self.set_drop_chance)
         self.window.ui.delay_slider.valueChanged.connect(self.set_delay_from_gui)
-        self.window.ui.clear_all_btn.clicked.disconnect()
-        self.window.ui.clear_all_btn.clicked.connect(self.manager_clear_all)
+        
+        self.window.ui.stop_btn.clicked.connect(self.stop_threads)
+        self.window.ui.clear_btn.clicked.connect(self.window.reset_logs)
+
+        self.window.ui.clear_menu.triggered.connect(self.update_clear_button_state)
+
+    def update_clear_button_state(self, action):
+        """Updates the main clear button to display and remember the last selected option."""
+        self.window.ui.clear_btn.setText(action.text())
+        
+        try:
+            self.window.ui.clear_btn.clicked.disconnect()
+        except Exception:
+            pass
+            
+        if action == self.window.ui.action_clear_logs:
+            self.window.ui.clear_btn.clicked.connect(self.window.reset_logs)
+        elif action == self.window.ui.action_clear_all:
+            self.window.ui.clear_btn.clicked.connect(self.manager_clear_all)
 
     def stop_threads(self):
         """Safely shuts down running QThreads using cooperative cancellation."""
-        import network_layer as ntwk # Ensure this is imported at the top of manager.py
+        import network_layer as ntwk 
 
-        # 1. Ask threads politely to stop and feed poison pills
         if self.receiver and self.receiver.isRunning():
             self.receiver.requestInterruption()
             dest_device = ntwk.devices.get((str(self.receiver.ip_address), self.receiver.port))
@@ -60,15 +76,13 @@ class Manager:
             self.sender.requestInterruption()
             src_device = ntwk.devices.get((str(self.sender.ip_address), self.sender.port_a))
             if src_device:
-                src_device.buffer.put(b"STOP") # Breaks sender out of ACK waiting
+                src_device.buffer.put(b"STOP")
 
-        # 2. Give them a fraction of a second to shut themselves down
         if self.receiver and self.receiver.isRunning():
             self.receiver.wait(300)
         if self.sender and self.sender.isRunning():
             self.sender.wait(300)
 
-        # 3. Only forcefully terminate if they are completely unresponsive
         if self.receiver and self.receiver.isRunning():
             self.receiver.terminate()
         if self.sender and self.sender.isRunning():
@@ -161,8 +175,6 @@ class Manager:
         # Start the sender and receiver threads
         self.receiver.start()
         self.sender.start()
-
-
 
 if __name__ == "__main__":
     manager = Manager()
