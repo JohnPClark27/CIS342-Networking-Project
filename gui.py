@@ -1,5 +1,5 @@
 import sys, os, ipaddress
-from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QToolBar, QWidget, QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QComboBox, QMenu, QToolBar, QToolButton, QWidget, QLabel, QSlider, QGridLayout, QHBoxLayout, QPushButton, QSpinBox, QFileDialog, QTextEdit, QLineEdit, QSizePolicy)
 from PySide6.QtCore import (Qt, QRegularExpression)
 from PySide6.QtGui import (QPixmap, QIcon, QRegularExpressionValidator)
 import config
@@ -17,8 +17,18 @@ class GlassTheme:
                 QMainWindow {{ background-color: #1e1e1e; {font_family} }}
                 QLabel {{ color: #ffffff; font-weight: 500; font-size: 13px; background: transparent; }}
                 QToolBar {{ background-color: #2b2b2b; border-bottom: 1px solid #444; padding: 8px; }}
+                
+                /* Standard Push Buttons */
                 QPushButton {{ background-color: #333333; border: 1px solid #555555; border-radius: 4px; color: white; padding: 6px 14px; font-weight: 500; font-size: 13px; }}
                 QPushButton:hover {{ background-color: #444446; border: 1px solid #007aff; color: #007aff; }}
+                
+                /* QToolButton (Split Button Styling) */
+                QToolButton {{ background-color: #333333; border: 1px solid #555555; border-radius: 4px; color: white; padding: 6px 14px; padding-right: 30px; font-weight: 500; font-size: 13px; }}
+                QToolButton:hover {{ background-color: #444446; border: 1px solid #007aff; color: #007aff; }}
+                QToolButton::menu-button {{ border-left: 1px solid #555; border-top-right-radius: 3px; border-bottom-right-radius: 3px; width: 24px; }}
+                QToolButton::menu-button:hover {{ background-color: #007aff; border-left: 1px solid #007aff; }}
+                QToolButton::menu-arrow {{ image: url("{base_dir}/gui_components/white-down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
+                
                 #PicArea {{ background-color: #2b2b2b; border: 1px solid #444; border-radius: 8px; }}
                 QLineEdit, QSpinBox, QComboBox {{ background-color: #2b2b2b; border: 1px solid #555; border-radius: 4px; color: white; padding: 4px 8px; font-size: 13px; }}
                 QLineEdit:hover, QSpinBox:hover, QComboBox:hover {{ border: 1px solid #007aff; background-color: #252525; }}
@@ -45,8 +55,18 @@ class GlassTheme:
                 QMainWindow {{ background-color: #f5f5f7; {font_family} }}
                 QLabel {{ color: #1d1d1f; font-weight: 500; font-size: 13px; background: transparent; }}
                 QToolBar {{ background-color: #ffffff; border-bottom: 1px solid #d1d1d6; padding: 8px; }}
+                
+                /* Standard Push Buttons */
                 QPushButton {{ background-color: #ffffff; border: 1px solid #b0b0b0; border-radius: 4px; color: #1d1d1f; padding: 6px 14px; font-weight: 500; font-size: 13px; }}
                 QPushButton:hover {{ background-color: #f2f2f7; border: 1px solid #007aff; color: #007aff; }}
+                
+                /* QToolButton (Split Button Styling) */
+                QToolButton {{ background-color: #ffffff; border: 1px solid #b0b0b0; border-radius: 4px; color: #1d1d1f; padding: 6px 14px; padding-right: 30px; font-weight: 500; font-size: 13px; }}
+                QToolButton:hover {{ background-color: #f2f2f7; border: 1px solid #007aff; color: #007aff; }}
+                QToolButton::menu-button {{ border-left: 1px solid #b0b0b0; border-top-right-radius: 3px; border-bottom-right-radius: 3px; width: 24px; }}
+                QToolButton::menu-button:hover {{ background-color: #007aff; border-left: 1px solid #007aff; }}
+                QToolButton::menu-arrow {{ image: url("{base_dir}/gui_components/down-arrow-svgrepo-com.svg"); width: 14px; height: 14px; }}
+                
                 #PicArea {{ background-color: #ffffff; border: 1px solid #d1d1d6; border-radius: 8px; }}
                 QLineEdit, QSpinBox, QComboBox {{ background-color: white; border: 1px solid #b0b0b0; border-radius: 4px; color: black; padding: 4px 8px; font-size: 13px; }}
                 QLineEdit:hover, QSpinBox:hover, QComboBox:hover {{ border: 1px solid #007aff; background-color: #fafafa; }}
@@ -229,16 +249,27 @@ class UIBuilder:
         self.receiver_port_input.setValue(123)
         self.receiver_port_input.setFixedWidth(90)
         
-        self.clear_logs_btn = QPushButton("Clear Logs")
-        self.clear_all_btn = QPushButton("Clear All")
+        self.clear_btn = QToolButton()
+        self.clear_btn.setText("Clear Logs")
+        self.clear_btn.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self.clear_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        
+        self.clear_menu = QMenu(self.clear_btn)
+        self.action_clear_logs = self.clear_menu.addAction("Clear Logs")
+        self.action_clear_all = self.clear_menu.addAction("Clear All")
+        self.clear_btn.setMenu(self.clear_menu)
+        
+        # 2. Create the Stop Transmission Button
+        self.stop_btn = QPushButton("Stop Transmission")
+        self.stop_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         right_ports_grid.addWidget(self.rec_ip_label, 0, 0)
         right_ports_grid.addWidget(self.rec_ip_input, 0, 1)
         right_ports_grid.addWidget(self.rec_port_spacer, 0, 2)
         right_ports_grid.addWidget(self.rec_port_label, 0, 3)
         right_ports_grid.addWidget(self.receiver_port_input, 0, 4)
-        right_ports_grid.addWidget(self.clear_logs_btn, 1, 0, 1, 2)
-        right_ports_grid.addWidget(self.clear_all_btn, 1, 3, 1, 2)
+        right_ports_grid.addWidget(self.clear_btn, 1, 0, 1, 2)
+        right_ports_grid.addWidget(self.stop_btn, 1, 3, 1, 2)
 
         right_port_layout.addWidget(right_grid_widget, alignment=Qt.AlignmentFlag.AlignTop)
         right_port_layout.addStretch()
@@ -272,14 +303,15 @@ class MainWindow(QMainWindow):
         self.is_dark_mode = False
         self.selected_file_path = None 
         self.receiver_has_image = False 
-        self.connect_signals()
+        
+        self.connect_signals() # <--- This is line 288 looking for the method below
         self.apply_theme() 
         self.toggle_ip_fields(self.ui.protocol_combo.currentText())
 
+    # --- ADD THIS METHOD BACK IN ---
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
-        self.ui.clear_logs_btn.clicked.connect(self.reset_logs)
-        self.ui.clear_all_btn.clicked.connect(self.clear_all)
+    # -------------------------------
 
     def toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
@@ -362,8 +394,12 @@ class MainWindow(QMainWindow):
 
     def set_received_image(self, image_path):
         if image_path:
+            # 1. Grab the exact dimensions of the image currently sitting in the left box
+            target_size = self.ui.pic_left.pixmap().size()
+            
+            # 2. Scale the right image to match those exact pixel dimensions
             pixmap = QPixmap(image_path).scaled(
-                self.ui.pic_right.width(), self.ui.pic_right.height(), 
+                target_size.width(), target_size.height(), 
                 Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
             )
             self.ui.pic_right.setPixmap(pixmap)
