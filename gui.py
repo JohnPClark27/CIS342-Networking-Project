@@ -280,12 +280,10 @@ class UIBuilder:
         self.log_left.setReadOnly(True)
         self.log_left.setMinimumHeight(120)
         self.log_left.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        self.log_left.document().setMaximumBlockCount(1300)
         self.log_right = QTextEdit()
         self.log_right.setReadOnly(True)
         self.log_right.setMinimumHeight(120)
         self.log_right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        self.log_right.document().setMaximumBlockCount(1300)
 
         self.grid.addWidget(self.pic_left, 0, 0)
         self.grid.addWidget(self.pic_right, 0, 1)
