@@ -110,7 +110,7 @@ class UIBuilder:
         self.toolbar.setMovable(False)
         self.mw.addToolBar(self.toolbar)
         self.protocol_combo = QComboBox()
-        self.protocol_combo.addItems(["UDP", "RUDP", "TCP"])
+        self.protocol_combo.addItems(["UDP", "RUDP"])
         self.protocol_combo.setMinimumWidth(70)
         self.toolbar.addWidget(QLabel("Protocol: "))
         self.toolbar.addWidget(self.protocol_combo)
@@ -356,7 +356,7 @@ class MainWindow(QMainWindow):
     def toggle_ip_fields(self, protocol_name):
         self.reset_logs()
         self.write_log(f"~ Protocol set to {protocol_name}", "left", "info")
-        show_ip = protocol_name in ("UDP", "TCP", "RUDP")
+        show_ip = protocol_name in ("UDP", "RUDP")
         for w in self.ui.ip_widgets:
             w.setVisible(show_ip)
 
