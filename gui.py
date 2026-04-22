@@ -302,14 +302,14 @@ class MainWindow(QMainWindow):
         self.selected_file_path = None 
         self.receiver_has_image = False 
         
-        self.connect_signals() # <--- This is line 288 looking for the method below
+        self.connect_signals()
         self.apply_theme() 
         self.toggle_ip_fields(self.ui.protocol_combo.currentText())
 
-    # --- ADD THIS METHOD BACK IN ---
+
     def connect_signals(self):
         self.ui.theme_btn.clicked.connect(self.toggle_theme)
-    # -------------------------------
+
 
     def toggle_theme(self):
         self.is_dark_mode = not self.is_dark_mode
