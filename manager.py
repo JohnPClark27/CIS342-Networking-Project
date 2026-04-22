@@ -64,8 +64,6 @@ class Manager:
 
     def stop_threads(self):
         """Safely shuts down running QThreads using cooperative cancellation."""
-        import network_layer as ntwk 
-
         if self.receiver and self.receiver.isRunning():
             self.receiver.requestInterruption()
             dest_device = ntwk.devices.get((str(self.receiver.ip_address), self.receiver.port))
