@@ -61,16 +61,17 @@ class Device():
             # Split payload into chunks
             chunks = app.split_payload(payload_bytes, 1400) # 1400 is close to standard practical limit of UDP datagram
 
+            packet_counter = 0
             seq_num = 0
             payload_length = len(chunks) # num of chunks
               
-            while seq_num < payload_length:
+            while packet_counter < payload_length:
                 # --- SAFE CANCELLATION CHECK ---
                 if self.worker.isInterruptionRequested():
                     self.worker.log_signal.emit("~ DVC: Send manually aborted", self.pane, "warning")
                     return 
 
-                chunk = chunks[seq_num]
+                chunk = chunks[packet_counter]
                 rudp_datagram = rudp.build_rudp_header(chunk, seq_num=seq_num)
                 udp_datagram = udp.build_udp_segment(self.port_number, dest_port, rudp_datagram)
 
@@ -84,7 +85,7 @@ class Device():
                         return 
 
                     ntwk.send(udp_datagram, dest_ip, dest_port)
-                    self.worker.log_signal.emit(f"~ DVC: Sent RUDP segment {seq_num} (seq_num) [{seq_num+1}/{len(chunks)}], waiting for ACK...", self.pane, "info")
+                    self.worker.log_signal.emit(f"~ DVC: Sent RUDP segment {seq_num} (seq_num) [{packet_counter+1}/{len(chunks)}], waiting for ACK...", self.pane, "info")
                     
                     # Timeout must exceed the network delay so ACKs can arrive before retransmitting
                     ack_timeout = max(0.5, config.delay * 3 + 0.2)
@@ -94,11 +95,11 @@ class Device():
 
                         if received_ack == seq_num:
                             self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received", self.pane, "success")
-                            seq_num += 1
+                            seq_num = 1 - seq_num
+                            packet_counter += 1
                             break
-                        elif received_ack + 1 < payload_length:
+                        else:
                             self.worker.log_signal.emit(f"~ DVC: ACK {received_ack} received; different from expected {seq_num}", self.pane, "info")
-                            seq_num = received_ack +1
                     
                     retry_count += 1
                     self.worker.log_signal.emit(f"~ DVC: Timeout waiting for ACK {seq_num}, retransmitting... (attempt {retry_count})", self.pane, "warning")
@@ -121,7 +122,6 @@ class Device():
 
         payload_buffer = bytearray() # holds payloads for assembly
         expected_seq_num = 0  # tracks next expected RUDP sequence number for duplicate detection
-        current_seq_num = -1
 
         # Continuously listen for incoming segments until we receive the special "END" segment indicating the end of the message
         while True:
@@ -184,21 +184,20 @@ class Device():
                 # Only append new segments; discard duplicates from retransmissions
                 if seq_num == expected_seq_num:
                     payload_buffer.extend(payload)
-                    expected_seq_num += 1
-                    current_seq_num += 1
+                    expected_seq_num = 1 - expected_seq_num
                     # Send ACK back to sender (always ACK valid segments, even duplicates)
                     if sender_ip and src_port:
-                        ack_packet = rudp.build_ack_packet(current_seq_num)
+                        ack_packet = rudp.build_ack_packet(seq_num)
                         ack_udp_segment = udp.build_udp_segment(self.port_number, src_port, ack_packet)
                         ntwk.send(ack_udp_segment, sender_ip, src_port)
-                        self.worker.log_signal.emit(f"~ DVC: ACK {current_seq_num} sent to sender", self.pane, "info")
+                        self.worker.log_signal.emit(f"~ DVC: ACK {seq_num} sent to sender", self.pane, "info")
                 else:
                     # Send ACK back to sender (always ACK valid segments, even duplicates)
                     if sender_ip and src_port:
-                        ack_packet = rudp.build_ack_packet(current_seq_num)
+                        ack_packet = rudp.build_ack_packet(seq_num)
                         ack_udp_segment = udp.build_udp_segment(self.port_number, src_port, ack_packet)
                         ntwk.send(ack_udp_segment, sender_ip, src_port)
-                        self.worker.log_signal.emit(f"~ DVC: ACK {current_seq_num} sent to sender", self.pane, "info")
+                        self.worker.log_signal.emit(f"~ DVC: ACK {seq_num} sent to sender", self.pane, "info")
                     self.worker.log_signal.emit(f"~ DVC: Duplicate segment {seq_num} (expected {expected_seq_num}), discarding data", self.pane, "warning")
 
         # Reassemble payload and return output file
